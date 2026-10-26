@@ -1,0 +1,14 @@
+R_DEF: Internal format may change without notice
+local
+id arrow_controls
+id btn_down
+id btn_enter
+id btn_local
+id btn_refresh
+id btn_up
+id btn_vpn
+id url_switcher
+id webview
+layout activity_main
+string app_name
+style Theme.HermesWebUI
