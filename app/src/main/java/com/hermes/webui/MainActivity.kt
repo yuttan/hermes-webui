@@ -70,24 +70,30 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Load default URL (LAN)
-        loadUrl(LOCAL_URL)
-        btnLocal.isSelected = true
+        // Remember the explicit connection choice, without automatic failover.
+        val preferences = getSharedPreferences("connection", MODE_PRIVATE)
+        val useVpn = preferences.getBoolean("vpn", false)
+        loadUrl(if (useVpn) VPN_URL else LOCAL_URL)
+        btnLocal.isSelected = !useVpn
+        btnVpn.isSelected = useVpn
 
         // Button listeners
         btnLocal.setOnClickListener {
+            preferences.edit().putBoolean("vpn", false).apply()
             loadUrl(LOCAL_URL)
             btnLocal.isSelected = true
             btnVpn.isSelected = false
         }
 
         btnVpn.setOnClickListener {
+            preferences.edit().putBoolean("vpn", true).apply()
             loadUrl(VPN_URL)
             btnVpn.isSelected = true
             btnLocal.isSelected = false
         }
 
         btnRefresh.setOnClickListener {
+            keyDispatcher.cancel()
             webView.reload()
         }
 
@@ -105,36 +111,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val focusScript by lazy {
+        assets.open("focus-input.js").bufferedReader().use { it.readText() }
+    }
+
+    private val keyDispatcher by lazy {
+        KeyDispatcher(
+            focus = { done ->
+                webView.requestFocus()
+                webView.evaluateJavascript(focusScript) { result -> done(result == "true") }
+            },
+            deliver = { key ->
+                webView.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, key))
+                webView.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, key))
+            }
+        )
+    }
+
     private fun sendKeyEvent(keyCode: Int) {
-        webView.requestFocus()
-        
-        val downEvent = KeyEvent(KeyEvent.ACTION_DOWN, keyCode)
-        val upEvent = KeyEvent(KeyEvent.ACTION_UP, keyCode)
-        
-        // First, ensure focus is on the input area by executing JavaScript
-        val jsKeyCode = when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_UP -> 38
-            KeyEvent.KEYCODE_DPAD_DOWN -> 40
-            KeyEvent.KEYCODE_ENTER -> 13
-            else -> keyCode
-        }
-        
-        webView.post {
-            // Focus the chat input area before sending key event
-            webView.evaluateJavascript(
-                "(function() { var inputs = document.querySelectorAll('input, textarea, [contenteditable=\"true\"]'); for (var i = 0; i < inputs.length; i++) { if (inputs[i].offsetParent !== null) { inputs[i].focus(); break; } } })()",
-                null
-            )
-            
-            // Small delay to ensure focus is set
-            webView.postDelayed({
-                webView.dispatchKeyEvent(downEvent)
-                webView.dispatchKeyEvent(upEvent)
-            }, 100)
-        }
+        keyDispatcher.send(keyCode)
+    }
+
+    override fun onDestroy() {
+        keyDispatcher.cancel()
+        webView.stopLoading()
+        (webView.parent as? android.view.ViewGroup)?.removeView(webView)
+        webView.destroy()
+        super.onDestroy()
     }
 
     private fun loadUrl(url: String) {
+        keyDispatcher.cancel()
         webView.loadUrl(url)
     }
 
