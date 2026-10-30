@@ -110,13 +110,31 @@ class MainActivity : AppCompatActivity() {
         webView.requestFocus()
 
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?) = false
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val url = request?.url?.toString() ?: return false
+                val target = RouteSelector.nousLoginRewrite(url, LOCAL_URL, VPN_URL) ?: return false
+                // The dashboard's Nous OAuth callback is registered on the Tailscale address only;
+                // starting from the LAN address ends in "Missing PKCE state cookie".
+                if (!hasVpn()) {
+                    android.widget.Toast.makeText(this@MainActivity,
+                        "Nousでのログインには Tailscale が必要です。オンにするか、ユーザー名とパスワードでログインしてください",
+                        android.widget.Toast.LENGTH_LONG).show()
+                    return true
+                }
+                view?.loadUrl(target)
+                return true
+            }
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 if (url != null && url.startsWith("http")) pageFailed = false
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
+                if (url != null && url.startsWith(VPN_URL) && currentRoute == Route.LAN) {
+                    // Nous sign-in moved this session to the Tailscale origin.
+                    tvStatus.text = (if (mode == Mode.AUTO) "自動 " else "") + "● VPN接続 (Nousログイン)"
+                    tvStatus.setTextColor(Color.parseColor("#29B6F6"))
+                }
                 if (clearHistoryOnFinish && url != null && url.startsWith("http")) {
                     clearHistoryOnFinish = false
                     view?.clearHistory()

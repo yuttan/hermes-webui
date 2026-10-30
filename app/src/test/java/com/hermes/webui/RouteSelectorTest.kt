@@ -38,6 +38,16 @@ class RouteSelectorTest {
         assertEquals(Mode.VPN, Mode.parse("VPN"))
     }
 
+    @Test fun nousLoginMovesToTailscaleOrigin() {
+        val lan = "http://192.168.1.27:8899"; val vpn = "http://100.124.137.25:8899"
+        assertEquals("$vpn/auth/login?provider=nous&next=%2F",
+            RouteSelector.nousLoginRewrite("$lan/auth/login?provider=nous&next=%2F", lan, vpn))
+        assertNull(RouteSelector.nousLoginRewrite("$vpn/auth/login?provider=nous", lan, vpn))
+        assertNull(RouteSelector.nousLoginRewrite("$lan/auth/login?provider=nousx", lan, vpn))
+        assertNull(RouteSelector.nousLoginRewrite("$lan/login?next=%2F", lan, vpn))
+        assertNull(RouteSelector.nousLoginRewrite("http://192.168.1.27:88990/auth/login?provider=nous", lan, vpn))
+    }
+
     @Test fun onlyHermesStatusCounts() {
         val ok = """{"version":"0.22.5","gateway_state":"running"}"""
         assertTrue(RouteSelector.isHermesStatus(200, ok))
