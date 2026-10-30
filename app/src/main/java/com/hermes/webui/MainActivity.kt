@@ -19,7 +19,11 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import java.net.HttpURLConnection
@@ -51,6 +55,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var statusIcon: ImageView
+    private lateinit var menuButton: ImageButton
+    private lateinit var shortcutPanel: View
 
     private val main = Handler(Looper.getMainLooper())
     private val ownExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -85,6 +91,11 @@ class MainActivity : AppCompatActivity() {
 
         webView = findViewById(R.id.webview)
         statusIcon = findViewById(R.id.iv_status)
+        menuButton = findViewById(R.id.btn_menu)
+        shortcutPanel = findViewById(R.id.shortcut_panel)
+        menuButton.setOnClickListener { setPanelOpen(shortcutPanel.visibility != View.VISIBLE) }
+        buildChips(findViewById(R.id.flow_keys), Shortcuts.keys)
+        buildChips(findViewById(R.id.flow_commands), Shortcuts.commands)
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -238,6 +249,64 @@ class MainActivity : AppCompatActivity() {
         <p>接続が戻ると自動で表示します。右下の更新ボタンで今すぐ再試行できます。</p>
         </body></html>
     """.trimIndent()
+
+    @VisibleForTesting internal fun setPanelOpen(open: Boolean) {
+        shortcutPanel.visibility = if (open) View.VISIBLE else View.GONE
+        menuButton.setBackgroundResource(if (open) R.drawable.bg_icon_button_active else R.drawable.bg_icon_button)
+        menuButton.imageTintList = ColorStateList.valueOf(if (open) Color.parseColor("#FF170D02") else Color.WHITE)
+        menuButton.contentDescription = getString(if (open) R.string.menu_close else R.string.menu_open)
+    }
+
+    private fun buildChips(container: android.view.ViewGroup, items: List<Shortcut>) {
+        val density = resources.displayMetrics.density
+        for (item in items) {
+            val chip = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setBackgroundResource(R.drawable.bg_chip)
+                setPadding((14 * density).toInt(), (8 * density).toInt(), (14 * density).toInt(), (8 * density).toInt())
+                minimumWidth = (72 * density).toInt()
+                isClickable = true
+                isFocusable = true
+                contentDescription = "${item.label} ${item.description}"
+                setOnClickListener { sendShortcut(item) }
+            }
+            chip.addView(TextView(this).apply {
+                text = item.label
+                setTextColor(Color.WHITE)
+                textSize = 15f
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            })
+            chip.addView(TextView(this).apply {
+                text = item.description
+                setTextColor(Color.parseColor("#FF9A9AA0"))
+                textSize = 11f
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            })
+            container.addView(chip)
+        }
+    }
+
+    private val terminalSendScript by lazy {
+        assets.open("terminal-send.js").bufferedReader().use { it.readText() }
+    }
+
+    /** Send to the chat terminal; on other pages fall back to a native key (if any). */
+    @VisibleForTesting internal fun sendShortcut(item: Shortcut) {
+        keyDispatcher.cancel()
+        val call = "(" + terminalSendScript + ")(" + org.json.JSONArray(item.chunks) + "," + item.gapMs + ")"
+        webView.evaluateJavascript(call) { result ->
+            if (result == "\"sent\"") return@evaluateJavascript
+            val key = item.fallbackKey
+            if (key == null) {
+                Toast.makeText(this, R.string.terminal_only, Toast.LENGTH_SHORT).show()
+                return@evaluateJavascript
+            }
+            val now = android.os.SystemClock.uptimeMillis()
+            webView.dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, key, 0, item.fallbackMeta))
+            webView.dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, key, 0, item.fallbackMeta))
+        }
+    }
 
     private val focusScript by lazy {
         assets.open("focus-input.js").bufferedReader().use { it.readText() }

@@ -8,4 +8,9 @@
     <string name="key_down">下</string>
     <string name="key_enter">Enter</string>
     <string name="refresh">再読み込み</string>
+    <string name="menu_open">ショートカットを開く</string>
+    <string name="menu_close">ショートカットを閉じる</string>
+    <string name="panel_keys">キー（チャットのターミナルへ送信）</string>
+    <string name="panel_commands">コマンド（入力欄に挿入 → Enterで実行）</string>
+    <string name="terminal_only">チャット画面で使えます</string>
 </resources>

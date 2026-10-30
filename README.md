@@ -2,6 +2,13 @@
 
 Hermes Web UIをタブレットで使うWebViewアプリ。Android 7.0以上。
 
+## 1.4の変更
+- アプリアイコンをHermes Agent（デスクトップ版と同じ画像）に変更。アダプティブアイコン対応。
+- 下部バーにキーボードボタンを追加。押すとショートカットパネルが開閉。
+  - キー: Esc / Esc×2 / Ctrl+C / Tab / Shift+Tab / Alt+Enter(改行) / ← → / Home / End / PgUp / PgDn / Ctrl+U・K・W / Ctrl+O・T・R・L（Hermes TUIのキー割り当てに合わせた）。
+  - コマンド: /new /stop /retry /undo /model /compress /usage /status /sessions /help を入力欄に挿入（実行はEnterで確定）。
+- 送信方式: チャット画面のxterm（screenReaderMode有効のため合成inputイベントは無視される）へ、ダッシュボードのIME compositionendフォールバック経由で生バイトを送る（assets/terminal-send.js）。チャット以外の画面ではEsc・Tab・矢印などをAndroidのキーイベントとして送る。ダッシュボードの実装が変わると動かなくなる可能性あり。
+
 ## 1.3の変更
 - 接続先はTailscale経由の `http://100.124.137.25:8899` に一本化。LAN/VPN切り替えと自動判定を廃止（NousログインのコールバックとログインCookieがこのアドレスに固定されるため）。
 - 上部バーを削除し、Web画面を最大化。
