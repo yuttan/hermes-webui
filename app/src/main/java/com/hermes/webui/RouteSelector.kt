@@ -27,6 +27,17 @@ object RouteSelector {
             }
         }
 
+    /**
+     * Nous OAuth must start on the origin registered as redirect_uri (the Tailscale address),
+     * because the PKCE cookie is bound to the starting host. Returns the rewritten URL, or null.
+     */
+    fun nousLoginRewrite(url: String, lanBase: String, vpnBase: String): String? {
+        if (!url.startsWith("$lanBase/auth/login?")) return null
+        val query = url.substringAfter('?').substringBefore('#')
+        if (query.split('&').none { it == "provider=nous" }) return null
+        return "$vpnBase/auth/login?$query"
+    }
+
     /** True only for a Hermes dashboard /api/status answer, not any device on a foreign 192.168.1.x. */
     fun isHermesStatus(code: Int, body: String): Boolean =
         code == 200 && body.contains("\"gateway_state\"") && body.contains("\"version\"")
