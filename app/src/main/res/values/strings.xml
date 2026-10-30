@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Hermes</string>
+    <string name="status_connected">Hermesに接続中</string>
+    <string name="status_checking">接続を確認中</string>
+    <string name="status_disconnected">Hermesに接続できません</string>
+    <string name="key_up">上</string>
+    <string name="key_down">下</string>
+    <string name="key_enter">Enter</string>
+    <string name="refresh">再読み込み</string>
 </resources>
