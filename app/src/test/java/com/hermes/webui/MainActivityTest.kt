@@ -1,10 +1,9 @@
 package com.hermes.webui
 
-import android.content.Context
 import android.os.Looper
+import android.view.View
 import android.webkit.WebView
-import android.widget.Button
-import android.widget.TextView
+import android.widget.ImageView
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -12,117 +11,74 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 class MainActivityTest {
-    private var lanUp = true
-    private var vpnUp = true
-    private var onWifi = true
+    private var up = true
 
     @Before fun setUp() {
-        RuntimeEnvironment.getApplication().getSharedPreferences("connection", Context.MODE_PRIVATE).edit().clear().commit()
         MainActivity.testExecutor = java.util.concurrent.Executor { it.run() }
-        MainActivity.testLocalNetwork = { onWifi }
-        MainActivity.testProbe = { url -> if (url == MainActivity.LOCAL_URL) lanUp else vpnUp }
+        MainActivity.testProbe = { up }
     }
 
     @After fun tearDown() {
         MainActivity.testExecutor = null
-        MainActivity.testLocalNetwork = null
         MainActivity.testProbe = null
     }
 
     private fun idle() = shadowOf(Looper.getMainLooper()).idle()
-
     private fun launch() = Robolectric.buildActivity(MainActivity::class.java).setup().also { idle() }
+    private fun icon(a: MainActivity) = a.findViewById<ImageView>(R.id.iv_status)
 
-    private fun status(a: MainActivity) = a.findViewById<TextView>(R.id.tv_status).text.toString()
-
-    @Test fun controlsDoNotCoverWebContent() {
-        val controller = launch()
-        val activity = controller.get()
-        val root = activity.findViewById<WebView>(R.id.webview).parent as android.view.View
-        root.measure(android.view.View.MeasureSpec.makeMeasureSpec(800, android.view.View.MeasureSpec.EXACTLY),
-            android.view.View.MeasureSpec.makeMeasureSpec(1200, android.view.View.MeasureSpec.EXACTLY))
-        root.layout(0, 0, 800, 1200)
-        val web = activity.findViewById<WebView>(R.id.webview)
-        val top = activity.findViewById<android.view.View>(R.id.url_switcher)
-        val bottom = activity.findViewById<android.view.View>(R.id.arrow_controls)
-        val params = web.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
-        assertEquals(top.id, params.topToBottom)
-        assertEquals(bottom.id, params.bottomToTop)
-        assertTrue(top.bottom < bottom.top)
-        controller.pause().stop().destroy()
-    }
-
-    @Test fun autoIsDefaultAndUsesLanOnHomeWifi() {
+    @Test fun noTopBarAndWebViewSitsAboveBottomBar() {
         val c = launch()
         val a = c.get()
-        assertTrue(a.findViewById<Button>(R.id.btn_auto).isSelected)
-        assertEquals(Route.LAN, a.activeRoute)
-        assertEquals(MainActivity.LOCAL_URL, a.findViewById<WebView>(R.id.webview).url)
-        assertEquals("自動 ● LAN接続", status(a))
+        assertNull(a.findViewById<View?>(resources("url_switcher", a)))
+        val web = a.findViewById<WebView>(R.id.webview)
+        val params = web.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+        assertEquals(androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID, params.topToTop)
+        assertEquals(R.id.bottom_bar, params.bottomToTop)
+        // Antenna is the first (left-most) child, refresh the last.
+        val bar = a.findViewById<android.view.ViewGroup>(R.id.bottom_bar)
+        assertEquals(R.id.iv_status, bar.getChildAt(0).id)
+        assertEquals(R.id.btn_refresh, bar.getChildAt(bar.childCount - 1).id)
         c.pause().stop().destroy()
     }
 
-    @Test fun autoUsesVpnOutsideHome() {
-        onWifi = false
+    private fun resources(name: String, a: MainActivity) =
+        a.resources.getIdentifier(name, "id", a.packageName)
+
+    @Test fun alwaysLoadsTailscaleOrigin() {
         val c = launch()
-        assertEquals(Route.VPN, c.get().activeRoute)
-        assertEquals(MainActivity.VPN_URL, c.get().findViewById<WebView>(R.id.webview).url)
-        assertEquals("自動 ● VPN接続 (Tailscale)", status(c.get()))
+        assertEquals(MainActivity.HERMES_URL, c.get().findViewById<WebView>(R.id.webview).url)
         c.pause().stop().destroy()
     }
 
-    @Test fun autoUsesVpnOnForeignWifi() {
-        lanUp = false
+    @Test fun antennaShowsConnected() {
         val c = launch()
-        assertEquals(Route.VPN, c.get().activeRoute)
+        assertEquals(ConnectionState.CONNECTED, c.get().state)
+        assertEquals("Hermesに接続中", icon(c.get()).contentDescription)
         c.pause().stop().destroy()
     }
 
-    @Test fun autoShowsOfflineWhenNothingAnswers() {
-        lanUp = false; vpnUp = false
+    @Test fun antennaShowsDisconnectedAndRecovers() {
+        up = false
         val c = launch()
-        assertEquals(Route.NONE, c.get().activeRoute)
-        assertEquals("自動 ● 接続できません", status(c.get()))
-        c.pause().stop().destroy()
-    }
-
-    @Test fun autoSwitchesWhenLeavingHomeOnResume() {
-        val c = launch()
-        assertEquals(Route.LAN, c.get().activeRoute)
-        c.pause()
-        onWifi = false
-        c.resume(); idle()
-        assertEquals(Route.VPN, c.get().activeRoute)
-        c.pause().stop().destroy()
-    }
-
-    @Test fun manualVpnIsRememberedAfterRestart() {
-        val first = launch()
-        first.get().findViewById<Button>(R.id.btn_vpn).performClick()
+        assertEquals(ConnectionState.DISCONNECTED, c.get().state)
+        assertEquals("Hermesに接続できません", icon(c.get()).contentDescription)
+        up = true
+        c.get().findViewById<View>(R.id.btn_refresh).performClick()
         idle()
-        first.pause().stop().destroy()
-        val second = launch()
-        assertEquals(MainActivity.VPN_URL, second.get().findViewById<WebView>(R.id.webview).url)
-        assertTrue(second.get().findViewById<Button>(R.id.btn_vpn).isSelected)
-        assertFalse(second.get().findViewById<Button>(R.id.btn_auto).isSelected)
-        assertEquals("● VPN接続 (Tailscale)", status(second.get()))
-        second.pause().stop().destroy()
+        assertEquals(ConnectionState.CONNECTED, c.get().state)
+        c.pause().stop().destroy()
     }
 
-    @Test fun manualLanReportsNoResponse() {
-        lanUp = false
-        val c = launch()
-        c.get().findViewById<Button>(R.id.btn_local).performClick()
-        idle()
-        assertEquals(Route.LAN, c.get().activeRoute)
-        assertEquals("● LAN 応答なし", status(c.get()))
-        c.pause().stop().destroy()
+    @Test fun probeAcceptsOnlyHermesStatus() {
+        assertTrue(HermesProbe.isHermesStatus(200, """{"version":"0.22.5","gateway_state":"running"}"""))
+        assertFalse(HermesProbe.isHermesStatus(302, """{"version":"x","gateway_state":"y"}"""))
+        assertFalse(HermesProbe.isHermesStatus(200, "<html>router</html>"))
     }
 }
