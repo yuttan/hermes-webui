@@ -29,6 +29,7 @@ object Shortcuts {
         Shortcut("Esc", "閉じる・取消", listOf(ESC), KeyEvent.KEYCODE_ESCAPE),
         Shortcut("Esc×2", "中断・下書き破棄", listOf(ESC, ESC), gapMs = 150),
         Shortcut("Ctrl+C", "中断・入力クリア", listOf(ctrl('c')), KeyEvent.KEYCODE_C, CTRL),
+        Shortcut("Ctrl+X", "↑で選んだ待機を破棄", listOf(ctrl('x')), KeyEvent.KEYCODE_X, CTRL),
         Shortcut("Tab", "補完", listOf("\t"), KeyEvent.KEYCODE_TAB),
         Shortcut("Shift+Tab", "YOLO切替", listOf("$ESC[Z"), KeyEvent.KEYCODE_TAB, SHIFT),
         Shortcut("Alt+Enter", "改行", listOf("$ESC\r"), KeyEvent.KEYCODE_ENTER, ALT),

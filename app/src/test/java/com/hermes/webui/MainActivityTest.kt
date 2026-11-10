@@ -96,6 +96,7 @@ class MainActivityTest {
         assertEquals(listOf("\u001b", "\u001b"), bytes("Esc×2"))
         assertEquals(listOf("\u0003"), bytes("Ctrl+C"))
         assertEquals(listOf("\u000f"), bytes("Ctrl+O"))
+        assertEquals(listOf("\u0018"), bytes("Ctrl+X"))
         assertEquals(listOf("\u0015"), bytes("Ctrl+U"))
         assertEquals(listOf("\u001b[Z"), bytes("Shift+Tab"))
         assertEquals(listOf("\u001b\r"), bytes("Alt+Enter"))
