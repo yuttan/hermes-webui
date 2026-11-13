@@ -44,7 +44,7 @@ import java.util.concurrent.Executors
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        const val HERMES_URL = "http://100.64.0.1:8899"
+        val HERMES_URL: String = BuildConfig.HERMES_URL
         private const val CONNECT_TIMEOUT_MS = 2500
         private const val READ_TIMEOUT_MS = 3000
         private const val POLL_MS = 15_000L

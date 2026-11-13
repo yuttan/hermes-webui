@@ -3,16 +3,27 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+def localProps = new Properties()
+def localFile = rootProject.file('local.properties')
+if (localFile.exists()) localFile.withInputStream { localProps.load(it) }
+// Connection target is NOT stored in git: set hermes.url in local.properties or pass -Phermes.url=...
+def hermesUrl = (project.findProperty('hermes.url') ?: localProps.getProperty('hermes.url') ?: 'http://hermes.invalid:8899')
+
 android {
     namespace 'com.hermes.webui'
     compileSdk 34
+
+    buildFeatures {
+        buildConfig true
+    }
 
     defaultConfig {
         applicationId "com.hermes.webui"
         minSdk 24
         targetSdk 34
-        versionCode 8
-        versionName "1.6"
+        versionCode 9
+        versionName "1.7"
+        buildConfigField "String", "HERMES_URL", "\"${hermesUrl}\""
     }
 
     buildTypes {

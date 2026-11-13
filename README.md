@@ -2,12 +2,13 @@
 
 Hermes Web UIをタブレットで使うWebViewアプリ。Android 7.0以上。
 
-## 1.6 / 1.5の変更
+## 1.7 / 1.6 / 1.5の変更
+- 1.7: 接続先アドレスをソースから外し、`local.properties`（Git管理外）の `hermes.url` からビルド時に埋め込む方式に変更。
 - 1.6: ショートカットパネルに Ctrl+X を追加（Hermes再起動で失われた待機項目を、↑で選んで破棄するため）。
 - 1.5: ソフトキーボードで入力欄が隠れる問題を修正。全画面フラグ(`windowFullscreen`)がadjustResizeを無効にしていたため、フラグをやめてIME insetを下余白として適用（`MainActivity.installInsets`）。
 
 ## 別環境（会社PCなど）向けに改変するには
-- 接続先: `MainActivity.kt` の `HERMES_URL` を自分のHermes Web UIのアドレスに変える。接続確認は未認証の `GET /api/status`（JSONに `version` と `gateway_state`）を使う。
+- 接続先: `local.properties` に `hermes.url=http://<自分のHermes Web UIのアドレス>:8899` を書いてビルドする（ソースにアドレスは書かない）。接続確認は未認証の `GET /api/status`（JSONに `version` と `gateway_state`）を使う。
 - パッケージ名(`com.hermes.webui`)・アプリ名・アイコンは必要に応じて変更。デバッグ署名のみで、配布用の署名鍵はリポジトリに含まれない（`*.jks` `*.keystore` は除外済み）。
 - HTTP平文通信を許可している（`usesCleartextTraffic`）。社内LAN/VPN内に限り、HTTPSにできる環境ならそちらを使う。
 - Nous OAuthログインを使う場合、コールバックURLはHermes側の `HERMES_DASHBOARD_PUBLIC_URL` に固定される。アプリの接続先と同じアドレスにそろえる。
@@ -20,7 +21,7 @@ Hermes Web UIをタブレットで使うWebViewアプリ。Android 7.0以上。
 - 送信方式: チャット画面のxterm（screenReaderMode有効のため合成inputイベントは無視される）へ、ダッシュボードのIME compositionendフォールバック経由で生バイトを送る（assets/terminal-send.js）。チャット以外の画面ではEsc・Tab・矢印などをAndroidのキーイベントとして送る。ダッシュボードの実装が変わると動かなくなる可能性あり。
 
 ## 1.3の変更
-- 接続先はTailscale経由の `http://100.64.0.1:8899` に一本化。LAN/VPN切り替えと自動判定を廃止（NousログインのコールバックとログインCookieがこのアドレスに固定されるため）。
+- 接続先はTailscale経由の Tailscale経由のアドレス（`local.properties` の `hermes.url`） に一本化。LAN/VPN切り替えと自動判定を廃止（NousログインのコールバックとログインCookieがこのアドレスに固定されるため）。
 - 上部バーを削除し、Web画面を最大化。
 - 下部バーを刷新：左端のアンテナアイコンでHermesへの接続状態を表示（緑=接続中、灰の点滅=確認中、赤＋斜線=接続できません）。右側に↑・↓・Enter・更新。
 - 接続確認は`/api/status`へ15秒ごと＋ネットワーク変化時。切断時は案内画面、復帰すると自動で再表示。
@@ -36,7 +37,7 @@ Hermes Web UIをタブレットで使うWebViewアプリ。Android 7.0以上。
 
 ## 操作と接続先
 アンテナで接続状態を確認、↑↓で選択移動、Enterで確定、更新ボタンで再読み込み。Androidの戻る操作でページ履歴を戻る。
-接続先はMainActivity.ktの`HERMES_URL`（`http://100.64.0.1:8899`）。アプリはTailscaleを起動しません。HTTPのためTailscale内でのみ利用し、インターネットへポート開放しないでください。
+接続先は `local.properties` の `hermes.url`（例: `hermes.url=http://<TailscaleのIP>:8899`）または `-Phermes.url=...` で指定します。IPアドレスはGitに含めません（未設定だとビルドは通るが接続できません）。アプリはTailscaleを起動しません。HTTPのためTailscale内でのみ利用し、インターネットへポート開放しないでください。
 
 ## ビルド・テスト
 JDK 17、Android SDK 34が必要。ANDROID_HOMEまたはlocal.propertiesにSDKを指定。
