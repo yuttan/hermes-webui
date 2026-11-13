@@ -2,6 +2,16 @@
 
 Hermes Web UIをタブレットで使うWebViewアプリ。Android 7.0以上。
 
+## 1.6 / 1.5の変更
+- 1.6: ショートカットパネルに Ctrl+X を追加（Hermes再起動で失われた待機項目を、↑で選んで破棄するため）。
+- 1.5: ソフトキーボードで入力欄が隠れる問題を修正。全画面フラグ(`windowFullscreen`)がadjustResizeを無効にしていたため、フラグをやめてIME insetを下余白として適用（`MainActivity.installInsets`）。
+
+## 別環境（会社PCなど）向けに改変するには
+- 接続先: `MainActivity.kt` の `HERMES_URL` を自分のHermes Web UIのアドレスに変える。接続確認は未認証の `GET /api/status`（JSONに `version` と `gateway_state`）を使う。
+- パッケージ名(`com.hermes.webui`)・アプリ名・アイコンは必要に応じて変更。デバッグ署名のみで、配布用の署名鍵はリポジトリに含まれない（`*.jks` `*.keystore` は除外済み）。
+- HTTP平文通信を許可している（`usesCleartextTraffic`）。社内LAN/VPN内に限り、HTTPSにできる環境ならそちらを使う。
+- Nous OAuthログインを使う場合、コールバックURLはHermes側の `HERMES_DASHBOARD_PUBLIC_URL` に固定される。アプリの接続先と同じアドレスにそろえる。
+
 ## 1.4の変更
 - アプリアイコンをHermes Agent（デスクトップ版と同じ画像）に変更。アダプティブアイコン対応。
 - 下部バーにキーボードボタンを追加。押すとショートカットパネルが開閉。
