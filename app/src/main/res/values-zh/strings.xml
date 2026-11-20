@@ -6,7 +6,7 @@
     <string name="setup_hint">例如 https://mypc.tail1234.ts.net</string>
     <string name="setup_test">测试连接</string>
     <string name="setup_save">保存并打开</string>
-    <string name="setup_help">示例\n• Tailscale Serve (推荐): https://mypc.tail1234.ts.net\n• Tailscale IP: http://100.x.y.z:9119\n• 仅家庭局域网: http://192.168.1.10:9119\n\n不写协议时，.ts.net 地址使用 https，其他地址使用 http。 服务器的设置方法请参阅项目主页。\n\nUnofficial Hermes Remote 是非官方应用，与 Nous Research 无关。</string>
+    <string name="setup_help">示例\n• Tailscale Serve（推荐）：https://mypc.tail1234.ts.net\n• Tailscale IP：http://100.x.y.z:9119\n• 仅家庭局域网：http://192.168.1.10:9119\n\n不写协议时，.ts.net 地址使用 https，其他地址使用 http。服务器的设置方法请参阅项目主页。\n\nUnofficial Hermes Remote 是非官方应用，与 Nous Research 无关。</string>
     <string name="test_running">正在检查…</string>
     <string name="test_ok">已连接到 Hermes 仪表盘</string>
     <string name="test_fail">无法连接。请检查地址、VPN 以及服务器是否在运行（仍可保存）。</string>
@@ -15,7 +15,7 @@
     <string name="err_malformed">地址格式不正确</string>
     <string name="err_port">端口号不正确</string>
     <string name="err_credentials">地址中不要包含用户名或密码</string>
-    <string name="err_query">请删除“?”或“#”之后的内容</string>
+    <string name="err_query">请删除从“?”或“#”开始的所有内容</string>
     <string name="warn_title">未加密的连接</string>
     <string name="warn_cleartext">你将以 http:// 连接家庭局域网或 Tailscale 之外的地址。登录信息和对话可能被他人读取。请改用 HTTPS（例如 Tailscale Serve）。</string>
     <string name="warn_back">返回</string>
@@ -51,9 +51,9 @@
     <string name="sc_pgdn">下一页</string>
     <string name="sc_ctrl_u">删除到行首</string>
     <string name="sc_ctrl_k">删除到行尾</string>
-    <string name="sc_ctrl_w">删除单词</string>
+    <string name="sc_ctrl_w">删除前一个词</string>
     <string name="sc_ctrl_o">选择模型</string>
-    <string name="sc_ctrl_t">代理</string>
+    <string name="sc_ctrl_t">智能体</string>
     <string name="sc_ctrl_r">工作区</string>
     <string name="sc_ctrl_l">重绘</string>
     <string name="cmd_new">新对话</string>
