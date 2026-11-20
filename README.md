@@ -89,6 +89,7 @@ The launcher icon is generated from the Hermes Agent artwork by `python tools/ma
 Chat shortcuts are sent as raw bytes through the IME fallback (`compositionend`) of the dashboard's xterm.js terminal (`assets/terminal-send.js`). A Hermes update that changes this part of the dashboard may break them.
 
 ## Changelog
+- 2.3.0: Targets Android 16 (predictive back, edge-to-edge). Full-width (CJK keyboard) addresses are accepted. The help page appears within ~10 s when the server cannot be reached instead of after the WebView's own long timeout. Tested on a Redmi Pad 2 (Android 16)
 - 2.2.0: Dot-matrix terminal-style icon. UI in 13 languages. Repository renamed to `unofficial-hermes-remote`
 - 2.1.0: Renamed to "Unofficial Hermes Remote". English UI (Japanese on Japanese devices). English and Japanese READMEs
 - 2.0.0: First public build. First-run server setup and gear button; the address is a device setting instead of a build-time constant. Package `io.github.yuttan.hermesremote` (installs alongside 1.x). HTTPS (Tailscale Serve) support and a warning for cleartext to public hosts. Release signing; app data excluded from backup

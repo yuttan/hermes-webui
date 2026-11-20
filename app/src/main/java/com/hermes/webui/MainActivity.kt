@@ -25,6 +25,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -45,6 +46,8 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val POLL_MS = 15_000L
         private const val NETWORK_DEBOUNCE_MS = 1_000L
+        /** A server load still pending this long while /api/status fails is treated as down. */
+        @VisibleForTesting internal const val HANG_MS = 10_000L
         private val COLOR_CONNECTED = Color.parseColor("#34C759")
         private val COLOR_CHECKING = Color.parseColor("#8E8E93")
         private val COLOR_DISCONNECTED = Color.parseColor("#FF453A")
@@ -63,8 +66,36 @@ class MainActivity : AppCompatActivity() {
         private set
     private var ready = false
     private var clearHistoryOnLoad = false
-    /** A main-frame load of the server is in flight (started, not finished). */
+    /**
+     * A main-frame load we asked for has not finished yet. Tracked from our own loadUrl/reload
+     * calls because the WebView reports onPageStarted only once a response arrives, so a
+     * connection that hangs never "starts".
+     */
     @VisibleForTesting internal var pageLoading = false
+
+    private var loadStartedAt = 0L
+
+    private fun loadServer() {
+        pageLoading = true
+        loadStartedAt = android.os.SystemClock.uptimeMillis()
+        webView.loadUrl(serverUrl)
+    }
+
+    /**
+     * Back goes through the page history first. From Android 16 (targetSdk 36) onBackPressed() is
+     * no longer called, so this must be an OnBackPressedCallback; it is enabled only while the page
+     * can go back, which also lets the system play the predictive "back to home" animation.
+     */
+    private val backCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            if (webView.canGoBack()) webView.goBack()
+            updateBack()
+        }
+    }
+
+    private fun updateBack() {
+        backCallback.isEnabled = ready && webView.canGoBack()
+    }
 
     private val main = Handler(Looper.getMainLooper())
     private val ownExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -137,7 +168,6 @@ class MainActivity : AppCompatActivity() {
                 if (url != null && url.startsWith("http")) {
                     pageFailed = false
                     offlineShown = false
-                    pageLoading = true
                 }
             }
 
@@ -148,7 +178,10 @@ class MainActivity : AppCompatActivity() {
                     clearHistoryOnLoad = false
                     view?.clearHistory()
                 }
+                updateBack()
             }
+
+            override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) = updateBack()
 
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 if (request?.isForMainFrame != true) return
@@ -162,16 +195,18 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_enter).setOnClickListener { keyDispatcher.send(KeyEvent.KEYCODE_ENTER) }
         findViewById<View>(R.id.btn_refresh).setOnClickListener {
             keyDispatcher.cancel()
-            if (offlineShown || pageFailed || webView.url.isNullOrEmpty()) webView.loadUrl(serverUrl)
-            else webView.reload()
+            if (offlineShown || pageFailed || webView.url.isNullOrEmpty()) loadServer()
+            else { pageLoading = true; loadStartedAt = android.os.SystemClock.uptimeMillis(); webView.reload() }
             checkConnection()
         }
         findViewById<View>(R.id.btn_settings).setOnClickListener {
             startActivity(Intent(this, SetupActivity::class.java).putExtra(SetupActivity.EXTRA_FROM_APP, true))
         }
 
+        onBackPressedDispatcher.addCallback(this, backCallback)
+
         showState(ConnectionState.CHECKING)
-        webView.loadUrl(serverUrl)
+        loadServer()
 
         connectivity = getSystemService(ConnectivityManager::class.java)
         try {
@@ -208,15 +243,23 @@ class MainActivity : AppCompatActivity() {
     private fun onProbeResult(ok: Boolean) {
         showState(if (ok) ConnectionState.CONNECTED else ConnectionState.DISCONNECTED)
         if (ok && (pageFailed || offlineShown)) {
-            // Connection came back: leave the error page automatically.
-            webView.loadUrl(serverUrl)
-        } else if (!ok && (pageFailed || pageLoading) && !offlineShown) {
-            // A blocked port over a VPN often never refuses: the WebView would wait a minute or
-            // more for its own timeout. The probe already says the server is gone, so stop now.
-            if (pageLoading) webView.stopLoading()
-            pageLoading = false
-            offlineShown = true
-            webView.loadDataWithBaseURL(null, offlineHtml(), "text/html", "utf-8", null)
+            // Connection came back: leave the error page automatically, and keep the help page
+            // out of the Back history.
+            clearHistoryOnLoad = true
+            loadServer()
+        } else if (!ok && !offlineShown && (pageFailed || pageLoading)) {
+            val pending = android.os.SystemClock.uptimeMillis() - loadStartedAt
+            if (pageFailed || pending >= HANG_MS) {
+                // A blocked port over a VPN often never refuses: the WebView would wait a minute or
+                // more for its own timeout. Replace the hanging navigation with the help page.
+                // (No stopLoading(): on a real WebView it also cancels this load.)
+                pageLoading = false
+                offlineShown = true
+                webView.loadDataWithBaseURL(null, offlineHtml(), "text/html", "utf-8", null)
+            } else {
+                // Maybe just a slow server: look again once the load has hung long enough.
+                scheduleCheck(HANG_MS - pending)
+            }
         }
     }
 
@@ -373,7 +416,7 @@ class MainActivity : AppCompatActivity() {
             serverUrl = current
             keyDispatcher.cancel()
             clearHistoryOnLoad = true
-            webView.loadUrl(serverUrl)
+            loadServer()
             showState(ConnectionState.CHECKING)
             checkConnection()
         }
@@ -404,13 +447,4 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            @Suppress("DEPRECATION")
-            super.onBackPressed()
-        }
-    }
 }

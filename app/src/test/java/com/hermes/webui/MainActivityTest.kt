@@ -62,16 +62,39 @@ class MainActivityTest {
         c.pause().stop().destroy()
     }
 
+    @Test fun backWalksPageHistoryThenLeavesTheApp() {
+        val c = launch()
+        val a = c.get()
+        val web = a.findViewById<WebView>(R.id.webview)
+        val shadow = shadowOf(web)
+        // Only the start page: Back is left to the system (predictive back to home).
+        shadow.pushEntryToHistory(url)
+        shadow.webViewClient.doUpdateVisitedHistory(web, url, false)
+        assertFalse(a.onBackPressedDispatcher.hasEnabledCallbacks())
+        shadow.pushEntryToHistory("$url/sessions")
+        shadow.webViewClient.doUpdateVisitedHistory(web, "$url/sessions", false)
+        assertTrue(a.onBackPressedDispatcher.hasEnabledCallbacks())
+        a.onBackPressedDispatcher.onBackPressed()
+        assertFalse(a.isFinishing)
+        assertFalse(web.canGoBack())
+        assertFalse(a.onBackPressedDispatcher.hasEnabledCallbacks())
+        c.pause().stop().destroy()
+    }
+
     @Test fun hangingLoadShowsHelpPageAsSoonAsProbeFails() {
         val c = launch()
         val a = c.get()
         val web = a.findViewById<WebView>(R.id.webview)
-        // The server stops answering while a page load is still hanging (no error yet).
-        shadowOf(web).webViewClient.onPageStarted(web, url, null)
+        // The server stops answering while the page load is still hanging: no onPageStarted,
+        // no error yet (that is how a real WebView behaves on a dropped connection).
+        assertTrue(a.pageLoading)
         up = false
         a.findViewById<View>(R.id.btn_refresh).performClick()
         idle()
+        // A slow server gets HANG_MS before its page is replaced.
         assertEquals(ConnectionState.DISCONNECTED, a.state)
+        assertTrue(a.pageLoading)
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(MainActivity.HANG_MS))
         assertFalse(a.pageLoading)
         assertTrue(shadowOf(web).lastLoadDataWithBaseURL.data.contains(a.getString(R.string.offline_title)))
         c.pause().stop().destroy()
