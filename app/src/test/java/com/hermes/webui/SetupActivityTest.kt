@@ -98,6 +98,19 @@ class SetupActivityTest {
         assertEquals(a.getString(R.string.test_fail), a.result())
     }
 
+    @Test fun englishByDefault() {
+        val a = launch().get()
+        assertEquals("Test connection", a.getString(R.string.setup_test))
+        assertEquals("Close / cancel", a.getString(Shortcuts.keys.first().description))
+    }
+
+    @Test @Config(qualifiers = "ja") fun japaneseOnJapaneseDevices() {
+        val a = launch().get()
+        assertEquals("接続テスト", a.getString(R.string.setup_test))
+        assertEquals("閉じる・取消", a.getString(Shortcuts.keys.first().description))
+        assertEquals("Hermes Remote", a.getString(R.string.app_name))
+    }
+
     @Test fun prefillsSavedAddress() {
         ServerConfig.set(ctx, "https://pc.tail1.ts.net")
         val a = launch(fromApp = true).get()
