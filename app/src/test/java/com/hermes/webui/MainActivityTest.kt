@@ -62,6 +62,25 @@ class MainActivityTest {
         c.pause().stop().destroy()
     }
 
+    @Test fun backWalksPageHistoryThenLeavesTheApp() {
+        val c = launch()
+        val a = c.get()
+        val web = a.findViewById<WebView>(R.id.webview)
+        val shadow = shadowOf(web)
+        // Only the start page: Back is left to the system (predictive back to home).
+        shadow.pushEntryToHistory(url)
+        shadow.webViewClient.doUpdateVisitedHistory(web, url, false)
+        assertFalse(a.onBackPressedDispatcher.hasEnabledCallbacks())
+        shadow.pushEntryToHistory("$url/sessions")
+        shadow.webViewClient.doUpdateVisitedHistory(web, "$url/sessions", false)
+        assertTrue(a.onBackPressedDispatcher.hasEnabledCallbacks())
+        a.onBackPressedDispatcher.onBackPressed()
+        assertFalse(a.isFinishing)
+        assertFalse(web.canGoBack())
+        assertFalse(a.onBackPressedDispatcher.hasEnabledCallbacks())
+        c.pause().stop().destroy()
+    }
+
     @Test fun firstRunOpensSetupInsteadOfWebView() {
         ctx.getSharedPreferences("server", android.content.Context.MODE_PRIVATE).edit().clear().commit()
         val c = Robolectric.buildActivity(MainActivity::class.java).setup().also { idle() }

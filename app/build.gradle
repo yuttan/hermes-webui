@@ -14,7 +14,7 @@ def releaseStore = System.getenv('HR_KEYSTORE')
 
 android {
     namespace 'com.hermes.webui'
-    compileSdk 34
+    compileSdk 36
 
     buildFeatures {
         buildConfig true
@@ -23,7 +23,7 @@ android {
     defaultConfig {
         applicationId "io.github.yuttan.hermesremote"
         minSdk 24
-        targetSdk 34
+        targetSdk 36
         versionCode 12
         versionName "2.2.0"
         buildConfigField "String", "DEFAULT_URL", "\"${hermesUrl}\""

@@ -25,6 +25,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -63,6 +64,22 @@ class MainActivity : AppCompatActivity() {
         private set
     private var ready = false
     private var clearHistoryOnLoad = false
+
+    /**
+     * Back goes through the page history first. From Android 16 (targetSdk 36) onBackPressed() is
+     * no longer called, so this must be an OnBackPressedCallback; it is enabled only while the page
+     * can go back, which also lets the system play the predictive "back to home" animation.
+     */
+    private val backCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            if (webView.canGoBack()) webView.goBack()
+            updateBack()
+        }
+    }
+
+    private fun updateBack() {
+        backCallback.isEnabled = ready && webView.canGoBack()
+    }
 
     private val main = Handler(Looper.getMainLooper())
     private val ownExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -144,7 +161,10 @@ class MainActivity : AppCompatActivity() {
                     clearHistoryOnLoad = false
                     view?.clearHistory()
                 }
+                updateBack()
             }
+
+            override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) = updateBack()
 
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 if (request?.isForMainFrame != true) return
@@ -165,6 +185,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_settings).setOnClickListener {
             startActivity(Intent(this, SetupActivity::class.java).putExtra(SetupActivity.EXTRA_FROM_APP, true))
         }
+
+        onBackPressedDispatcher.addCallback(this, backCallback)
 
         showState(ConnectionState.CHECKING)
         webView.loadUrl(serverUrl)
@@ -396,13 +418,4 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            @Suppress("DEPRECATION")
-            super.onBackPressed()
-        }
-    }
 }
