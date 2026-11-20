@@ -66,6 +66,7 @@ class MainActivity : AppCompatActivity() {
         private set
     private var ready = false
     private var clearHistoryOnLoad = false
+    private lateinit var tokenKeeper: PtyTokenKeeper
     /**
      * A main-frame load we asked for has not finished yet. Tracked from our own loadUrl/reload
      * calls because the WebView reports onPageStarted only once a response arrives, so a
@@ -204,6 +205,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         onBackPressedDispatcher.addCallback(this, backCallback)
+
+        // Re-attach the chat terminal after the app was killed instead of opening a new, empty session.
+        tokenKeeper = PtyTokenKeeper(this, webView)
+        tokenKeeper.install(serverUrl)
 
         showState(ConnectionState.CHECKING)
         loadServer()
@@ -416,6 +421,7 @@ class MainActivity : AppCompatActivity() {
             serverUrl = current
             keyDispatcher.cancel()
             clearHistoryOnLoad = true
+            tokenKeeper.install(serverUrl)
             loadServer()
             showState(ConnectionState.CHECKING)
             checkConnection()
