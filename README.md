@@ -1,6 +1,10 @@
+<img src="docs/icon.png" width="96" align="right" alt="Icon">
+
 # Unofficial Hermes Remote
 
 English | [日本語](README.ja.md)
+
+[![CI](https://github.com/yuttan/unofficial-hermes-remote/actions/workflows/ci.yml/badge.svg)](https://github.com/yuttan/unofficial-hermes-remote/actions/workflows/ci.yml) [![Latest release](https://img.shields.io/github/v/release/yuttan/unofficial-hermes-remote)](https://github.com/yuttan/unofficial-hermes-remote/releases/latest)
 
 A full-screen Android client for the web dashboard (`hermes dashboard`) of a [Hermes Agent](https://github.com/NousResearch/hermes-agent) that you run on your own computer. Android 7.0 or later. The UI follows the device language: English, Japanese, German, Spanish, French, Italian, Portuguese, Russian, Chinese (Simplified / Traditional), Korean and Indonesian (English for any other language). On the home screen the app is shown as "Hermes Remote".
 
@@ -77,7 +81,7 @@ HR_KEYSTORE=/path/release.jks HR_KEYSTORE_PASSWORD=... HR_KEY_ALIAS=... HR_KEY_P
 ```
 Losing the key means existing users can no longer update. Keep a backup.
 
-Translations live in `app/src/main/res/values*/strings.xml` (English in `values`). Languages other than English and Japanese were machine-translated; corrections and new languages are welcome as pull requests. `TranslationsTest` fails if a language misses or adds a string.
+Translations live in `app/src/main/res/values*/strings.xml` (English in `values`). Languages other than English and Japanese were machine-translated; corrections and new languages are welcome as pull requests ([help wanted](https://github.com/yuttan/unofficial-hermes-remote/issues/6)). `TranslationsTest` fails if a language misses or adds a string.
 
 The launcher icon is generated from the Hermes Agent artwork by `python tools/make_icon.py` (amber dot-matrix "terminal" rendering).
 
