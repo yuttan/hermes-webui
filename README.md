@@ -1,70 +1,90 @@
-# Hermes WebUI Android
+# Hermes Remote（非公式）
 
-Hermes Web UIをタブレットで使うWebViewアプリ。Android 7.0以上。
+自分のPCで動かしている [Hermes Agent](https://github.com/NousResearch/hermes-agent) のWebダッシュボード（`hermes dashboard`）を、Androidのスマホ・タブレットから全画面で使うためのアプリです。Android 7.0以上。
 
-## 1.7 / 1.6 / 1.5の変更
-- 1.7: 接続先アドレスをソースから外し、`local.properties`（Git管理外）の `hermes.url` からビルド時に埋め込む方式に変更。
-- 1.6: ショートカットパネルに Ctrl+X を追加（Hermes再起動で失われた待機項目を、↑で選んで破棄するため）。
-- 1.5: ソフトキーボードで入力欄が隠れる問題を修正。全画面フラグ(`windowFullscreen`)がadjustResizeを無効にしていたため、フラグをやめてIME insetを下余白として適用（`MainActivity.installInsets`）。
+> 個人が作った**非公式アプリ**です。Nous Research とは関係ありません。
 
-## 別環境（会社PCなど）向けに改変するには
-- 接続先: `local.properties` に `hermes.url=http://<自分のHermes Web UIのアドレス>:8899` を書いてビルドする（ソースにアドレスは書かない）。接続確認は未認証の `GET /api/status`（JSONに `version` と `gateway_state`）を使う。
-- パッケージ名(`com.hermes.webui`)・アプリ名・アイコンは必要に応じて変更。デバッグ署名のみで、配布用の署名鍵はリポジトリに含まれない（`*.jks` `*.keystore` は除外済み）。
-- HTTP平文通信を許可している（`usesCleartextTraffic`）。社内LAN/VPN内に限り、HTTPSにできる環境ならそちらを使う。
-- Nous OAuthログインを使う場合、コールバックURLはHermes側の `HERMES_DASHBOARD_PUBLIC_URL` に固定される。アプリの接続先と同じアドレスにそろえる。
+## できること
+- ダッシュボードを全画面で表示（チャット画面＝Hermes TUI もそのまま使える）
+- 下部バーの ↑ ↓ Enter と、キーボードボタンで開くショートカットパネル
+  - キー: Esc / Esc×2 / Ctrl+C / Tab / Shift+Tab / Alt+Enter / ← → / Home / End / PgUp / PgDn / Ctrl+U・K・W・O・T・R・L・X
+  - コマンド: /new /stop /retry /undo /model /compress /usage /status /sessions /help（入力欄に入るだけ。Enterで実行）
+- 左端のアンテナで接続状態を表示（緑＝接続中、灰の点滅＝確認中、赤＝接続できません）。切れると案内画面を出し、つながると自動で戻る
+- 歯車ボタンで接続先をいつでも変更
 
-## 1.4の変更
-- アプリアイコンをHermes Agent（デスクトップ版と同じ画像）に変更。アダプティブアイコン対応。
-- 下部バーにキーボードボタンを追加。押すとショートカットパネルが開閉。
-  - キー: Esc / Esc×2 / Ctrl+C / Tab / Shift+Tab / Alt+Enter(改行) / ← → / Home / End / PgUp / PgDn / Ctrl+U・K・W / Ctrl+O・T・R・L（Hermes TUIのキー割り当てに合わせた）。
-  - コマンド: /new /stop /retry /undo /model /compress /usage /status /sessions /help を入力欄に挿入（実行はEnterで確定）。
-- 送信方式: チャット画面のxterm（screenReaderMode有効のため合成inputイベントは無視される）へ、ダッシュボードのIME compositionendフォールバック経由で生バイトを送る（assets/terminal-send.js）。チャット以外の画面ではEsc・Tab・矢印などをAndroidのキーイベントとして送る。ダッシュボードの実装が変わると動かなくなる可能性あり。
+## インストール
+1. [Releases](https://github.com/yuttan/hermes-webui/releases) から最新の `hermes-remote-<版>.apk` をスマホでダウンロード
+2. 開いてインストール（「提供元不明のアプリ」の許可を求められたら、ダウンロードに使ったブラウザに許可する）
+3. 初回起動で接続先を入力 →「接続テスト」→「保存して開く」
 
-## 1.3の変更
-- 接続先はTailscale経由の Tailscale経由のアドレス（`local.properties` の `hermes.url`） に一本化。LAN/VPN切り替えと自動判定を廃止（NousログインのコールバックとログインCookieがこのアドレスに固定されるため）。
-- 上部バーを削除し、Web画面を最大化。
-- 下部バーを刷新：左端のアンテナアイコンでHermesへの接続状態を表示（緑=接続中、灰の点滅=確認中、赤＋斜線=接続できません）。右側に↑・↓・Enter・更新。
-- 接続確認は`/api/status`へ15秒ごと＋ネットワーク変化時。切断時は案内画面、復帰すると自動で再表示。
-- Tailscaleは常時オンが前提。Androidの「常時接続VPN」にTailscaleを設定すると確実。
+更新も同じ手順で、新しいAPKを上書きインストールします（ログイン状態は残ります）。
+[Obtainium](https://github.com/ImranR98/Obtainium) にこのリポジトリのURLを登録すると、新しい版が出たときに知らせてくれます。
 
-## 1.1の改善
-- 接続先の選択を保存して次回起動でも維持。
-- 上下の操作バーとWeb画面を分離し、ページへの重なりを解消。
-- ↑↓Enterはフォーカス完了後に順番に送信。固定100ms待機を撤去。
-- 現在の編集欄を優先し、なければtextarea、contenteditable、テキスト入力の順。パスワード・非表示・無効・読み取り専用は対象外。
-- 入力欄がなければキーを送らない。切り替え・更新・終了時は保留キーを破棄。
-- 終了時にWebViewを解放。Gradle Wrapper、回帰テスト、生成物除外を追加。
+## サーバー側の準備（Hermes を動かしているPC）
+外出先から使うには、PCとスマホの両方に [Tailscale](https://tailscale.com/) を入れて同じアカウントでログインしておくのがおすすめです。ポートをインターネットに開放する必要はありません。
 
-## 操作と接続先
-アンテナで接続状態を確認、↑↓で選択移動、Enterで確定、更新ボタンで再読み込み。Androidの戻る操作でページ履歴を戻る。
-接続先は `local.properties` の `hermes.url`（例: `hermes.url=http://<TailscaleのIP>:8899`）または `-Phermes.url=...` で指定します。IPアドレスはGitに含めません（未設定だとビルドは通るが接続できません）。アプリはTailscaleを起動しません。HTTPのためTailscale内でのみ利用し、インターネットへポート開放しないでください。
+### おすすめ: Tailscale Serve で HTTPS にする
+通信が暗号化され、アドレスも名前で覚えやすくなります。
 
-## ビルド・テスト
-JDK 17、Android SDK 34が必要。ANDROID_HOMEまたはlocal.propertiesにSDKを指定。
+1. Tailscale の管理画面（DNS 設定）で **MagicDNS** と **HTTPS Certificates** を有効にする
+2. ログイン方法を決める（`127.0.0.1` 以外から見られるダッシュボードにはログインが必須です）
+   - かんたん: ユーザー名とパスワード。`~/.hermes/.env` に `HERMES_DASHBOARD_BASIC_AUTH_USERNAME` と `HERMES_DASHBOARD_BASIC_AUTH_PASSWORD`（または `_PASSWORD_HASH`）を書く
+   - Nous アカウントでログイン: `hermes dashboard register`
+3. `~/.hermes/.env` に公開アドレスを書く
+   ```
+   HERMES_DASHBOARD_PUBLIC_URL=https://<PC名>.<tailnet名>.ts.net
+   ```
+4. ダッシュボードをPC内だけで起動し、Tailscale Serve で中継する
+   ```sh
+   hermes dashboard --host 127.0.0.1 --port 9119 --no-open
+   tailscale serve --bg 9119
+   ```
+5. アプリには `https://<PC名>.<tailnet名>.ts.net` を入力（`tailscale serve status` で確認できます）
 
-Windows:
-```bat
-gradlew.bat testDebugUnitTest lintDebug assembleDebug
-```
-macOS/Linux:
+### かんたん: Tailscale のIPに直接つなぐ
 ```sh
-./gradlew testDebugUnitTest lintDebug assembleDebug
+hermes dashboard --host 0.0.0.0 --port 9119 --no-open
 ```
-入力欄選択のテスト（Node.js）:
-```sh
-node --test tests/focus.test.cjs
-```
-APK: `app/build/outputs/apk/debug/app-debug.apk`
-```sh
-adb devices -l
-adb -s <tablet-serial> install -r app/build/outputs/apk/debug/app-debug.apk
-```
-更新には既存アプリと同じ署名鍵が必要。別PCのdebug鍵では更新できない場合があります。
+アプリには `http://100.x.y.z:9119`（PCの Tailscale IP）を入力します。この場合もログイン設定（上の手順2）が必要です。Tailscale の中は暗号化されていますが、Nous ログインのコールバックやログインCookieはアドレスに結びつくので、`HERMES_DASHBOARD_PUBLIC_URL` も同じアドレスにそろえてください。家のLAN内だけで使うなら `http://192.168.x.x:9119` でもかまいません。
 
-## 検証と残課題
-- Robolectric/JUnit: 接続先保存、レイアウト制約、非同期キー順序・キャンセル。
-- Node.js: 入力欄選択、繰り返し、無効な入力欄除外（DOMテストダブル）。
-- 1.1の実機検証は未実施。modelの連続選択、Gboard表示時レイアウト、LAN/VPN認証はRedmi Pad2で確認が必要。
-- URL編集画面、接続エラー専用表示、旧全画面・戻るAPIの更新、HTTP許可範囲の制限は残課題。
-- Web UIのDOM変更に合わせ、入力欄の判定調整が必要になる可能性があります。
-- Gitから生成物を除外しましたが過去の履歴には残っています。履歴は書き換えていません。
+詳しくは Hermes の公式ドキュメント「Web Dashboard」の Authentication と Public URL の節を見てください。
+
+### うまくつながらないとき
+- スマホ側の Tailscale がオンか（Androidの「設定 → VPN → Tailscale → 常時接続VPN」をオンにすると確実）
+- PCで `hermes dashboard` が動いているか。PCがスリープしていないか
+- 「接続テスト」は、ログインなしで見られる `GET /api/status` に Hermes の応答（`version` と `gateway_state`）が返るかで判定しています
+
+## 安全のための仕様
+- `http://` で家のLAN・Tailscale・`localhost` 以外へつなごうとすると、保存前に警告を出します
+- アドレスにユーザー名・パスワード・`?` 以降を含めることはできません
+- ログインCookieと接続先は端末内だけに保存し、クラウドバックアップや機種変更時の移行の対象外にしています
+- アプリが使う権限はインターネットとネットワーク状態の確認だけです
+
+## 開発者向け
+JDK 17 と Android SDK 34 が必要です。`local.properties` に `sdk.dir=...` を書きます。自分用ビルドでは `hermes.url=<アドレス>` を書いておくと、初回の入力欄にそのアドレスが入ります（Gitには含めません）。
+
+```sh
+./gradlew testDebugUnitTest lintDebug assembleDebug   # Windows は gradlew.bat
+node --test tests/focus.test.cjs                      # 入力欄選択のテスト
+```
+
+リリースビルドの署名鍵は環境変数で渡し、リポジトリには置きません。
+```sh
+HR_KEYSTORE=/path/release.jks HR_KEYSTORE_PASSWORD=... HR_KEY_ALIAS=... HR_KEY_PASSWORD=... \
+  ./gradlew testDebugUnitTest lintRelease assembleRelease
+```
+署名鍵を失くすと既存の利用者が更新できなくなります。必ずバックアップしてください。
+
+### 仕組みの注意
+チャット画面のショートカットは、ダッシュボードのターミナル（xterm.js）が日本語入力のために持っている仕組み（compositionend）を使ってバイト列を送っています（`assets/terminal-send.js`）。Hermes の更新でこの部分が変わると動かなくなる可能性があります。
+
+## 変更履歴
+- 2.0.0: 誰でも使える配布版に。初回起動の接続先設定画面と歯車ボタンを追加し、接続先をビルド時の埋め込みから端末の設定に変更。パッケージ名を `io.github.yuttan.hermesremote`、アプリ名を「Hermes Remote」に変更（1.x とは別アプリとして入ります）。HTTPS（Tailscale Serve）に対応し、平文で外部へつなぐときは警告。リリース署名、バックアップ除外を追加
+- 1.7: 接続先アドレスをソースから外し、`local.properties` から埋め込む方式に変更
+- 1.6: Ctrl+X を追加
+- 1.5: ソフトキーボードで入力欄が隠れる問題を修正
+- 1.4: ショートカットパネル、アイコン変更
+- 1.3: Tailscale 一本化、アンテナ表示、下部バー刷新
+
+## ライセンス
+MIT License（`LICENSE`）

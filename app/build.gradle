@@ -6,8 +6,11 @@ plugins {
 def localProps = new Properties()
 def localFile = rootProject.file('local.properties')
 if (localFile.exists()) localFile.withInputStream { localProps.load(it) }
-// Connection target is NOT stored in git: set hermes.url in local.properties or pass -Phermes.url=...
-def hermesUrl = (project.findProperty('hermes.url') ?: localProps.getProperty('hermes.url') ?: 'http://hermes.invalid:8899')
+// Optional pre-filled address for your own builds (never committed): hermes.url in local.properties or -Phermes.url=...
+// Public builds leave it empty and ask on first launch.
+def hermesUrl = (project.findProperty('hermes.url') ?: localProps.getProperty('hermes.url') ?: '')
+// Release signing comes from the environment only, so no key material lives in the repo.
+def releaseStore = System.getenv('HR_KEYSTORE')
 
 android {
     namespace 'com.hermes.webui'
@@ -18,16 +21,31 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.hermes.webui"
+        applicationId "io.github.yuttan.hermesremote"
         minSdk 24
         targetSdk 34
-        versionCode 9
-        versionName "1.7"
-        buildConfigField "String", "HERMES_URL", "\"${hermesUrl}\""
+        versionCode 10
+        versionName "2.0.0"
+        buildConfigField "String", "DEFAULT_URL", "\"${hermesUrl}\""
+    }
+
+    signingConfigs {
+        if (releaseStore) {
+            release {
+                storeFile file(releaseStore)
+                storePassword System.getenv('HR_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('HR_KEY_ALIAS')
+                keyPassword System.getenv('HR_KEY_PASSWORD')
+                enableV1Signing true
+                enableV2Signing true
+                enableV3Signing true
+            }
+        }
     }
 
     buildTypes {
         release {
+            if (releaseStore) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
