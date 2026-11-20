@@ -2,6 +2,7 @@ package com.hermes.webui
 
 import java.net.URI
 import java.net.URISyntaxException
+import java.text.Normalizer
 import java.util.Locale
 
 /**
@@ -23,7 +24,9 @@ object ServerUrl {
     enum class Warning { CLEARTEXT_PUBLIC }
 
     fun parse(input: String): Result {
-        var text = input.trim()
+        // CJK keyboards often type full-width characters (１００．１２４：８８９９); fold them to ASCII.
+        var text = Normalizer.normalize(input, Normalizer.Form.NFKC)
+            .replace('\u3002', '.').replace('\uFF61', '.').trim()
         if (text.isEmpty()) return Result.Error(Reason.EMPTY)
         if (text.any { it.isWhitespace() || it == '"' || it == '<' || it == '>' }) return Result.Error(Reason.MALFORMED)
         if (!text.contains("://")) {

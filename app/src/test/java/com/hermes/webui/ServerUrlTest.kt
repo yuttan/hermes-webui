@@ -22,6 +22,12 @@ class ServerUrlTest {
         assertEquals("http://mypc:9119", ok(" mypc:9119 ").url)
     }
 
+    @Test fun foldsFullWidthInputFromCjkKeyboards() {
+        assertEquals("http://100.124.1.25:8899", ok("１００．１２４．１．２５：８８９９").url)
+        assertEquals("https://pc.tail1.ts.net", ok("ｐｃ。ｔａｉｌ１。ｔｓ。ｎｅｔ").url)
+        assertEquals("http://192.168.1.10:9119", ok("ｈｔｔｐ：／／１９２．１６８．１．１０：９１１９　").url)
+    }
+
     @Test fun rejectsBadInput() {
         assertEquals(ServerUrl.Reason.EMPTY, err("   "))
         assertEquals(ServerUrl.Reason.BAD_SCHEME, err("ftp://example.com"))

@@ -63,6 +63,8 @@ class MainActivity : AppCompatActivity() {
         private set
     private var ready = false
     private var clearHistoryOnLoad = false
+    /** A main-frame load of the server is in flight (started, not finished). */
+    @VisibleForTesting internal var pageLoading = false
 
     private val main = Handler(Looper.getMainLooper())
     private val ownExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -135,10 +137,12 @@ class MainActivity : AppCompatActivity() {
                 if (url != null && url.startsWith("http")) {
                     pageFailed = false
                     offlineShown = false
+                    pageLoading = true
                 }
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
+                pageLoading = false
                 if (clearHistoryOnLoad && url != null && url.startsWith(serverUrl)) {
                     // A new server must not be reachable through Back from the old one.
                     clearHistoryOnLoad = false
@@ -206,7 +210,11 @@ class MainActivity : AppCompatActivity() {
         if (ok && (pageFailed || offlineShown)) {
             // Connection came back: leave the error page automatically.
             webView.loadUrl(serverUrl)
-        } else if (!ok && pageFailed && !offlineShown) {
+        } else if (!ok && (pageFailed || pageLoading) && !offlineShown) {
+            // A blocked port over a VPN often never refuses: the WebView would wait a minute or
+            // more for its own timeout. The probe already says the server is gone, so stop now.
+            if (pageLoading) webView.stopLoading()
+            pageLoading = false
             offlineShown = true
             webView.loadDataWithBaseURL(null, offlineHtml(), "text/html", "utf-8", null)
         }
