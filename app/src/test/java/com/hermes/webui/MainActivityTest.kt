@@ -81,6 +81,25 @@ class MainActivityTest {
         c.pause().stop().destroy()
     }
 
+    @Test fun hangingLoadShowsHelpPageAsSoonAsProbeFails() {
+        val c = launch()
+        val a = c.get()
+        val web = a.findViewById<WebView>(R.id.webview)
+        // The server stops answering while the page load is still hanging: no onPageStarted,
+        // no error yet (that is how a real WebView behaves on a dropped connection).
+        assertTrue(a.pageLoading)
+        up = false
+        a.findViewById<View>(R.id.btn_refresh).performClick()
+        idle()
+        // A slow server gets HANG_MS before its page is replaced.
+        assertEquals(ConnectionState.DISCONNECTED, a.state)
+        assertTrue(a.pageLoading)
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(MainActivity.HANG_MS))
+        assertFalse(a.pageLoading)
+        assertTrue(shadowOf(web).lastLoadDataWithBaseURL.data.contains(a.getString(R.string.offline_title)))
+        c.pause().stop().destroy()
+    }
+
     @Test fun firstRunOpensSetupInsteadOfWebView() {
         ctx.getSharedPreferences("server", android.content.Context.MODE_PRIVATE).edit().clear().commit()
         val c = Robolectric.buildActivity(MainActivity::class.java).setup().also { idle() }

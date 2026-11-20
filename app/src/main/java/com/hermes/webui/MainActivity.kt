@@ -46,6 +46,8 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val POLL_MS = 15_000L
         private const val NETWORK_DEBOUNCE_MS = 1_000L
+        /** A server load still pending this long while /api/status fails is treated as down. */
+        @VisibleForTesting internal const val HANG_MS = 10_000L
         private val COLOR_CONNECTED = Color.parseColor("#34C759")
         private val COLOR_CHECKING = Color.parseColor("#8E8E93")
         private val COLOR_DISCONNECTED = Color.parseColor("#FF453A")
@@ -64,6 +66,20 @@ class MainActivity : AppCompatActivity() {
         private set
     private var ready = false
     private var clearHistoryOnLoad = false
+    /**
+     * A main-frame load we asked for has not finished yet. Tracked from our own loadUrl/reload
+     * calls because the WebView reports onPageStarted only once a response arrives, so a
+     * connection that hangs never "starts".
+     */
+    @VisibleForTesting internal var pageLoading = false
+
+    private var loadStartedAt = 0L
+
+    private fun loadServer() {
+        pageLoading = true
+        loadStartedAt = android.os.SystemClock.uptimeMillis()
+        webView.loadUrl(serverUrl)
+    }
 
     /**
      * Back goes through the page history first. From Android 16 (targetSdk 36) onBackPressed() is
@@ -156,6 +172,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
+                pageLoading = false
                 if (clearHistoryOnLoad && url != null && url.startsWith(serverUrl)) {
                     // A new server must not be reachable through Back from the old one.
                     clearHistoryOnLoad = false
@@ -178,8 +195,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_enter).setOnClickListener { keyDispatcher.send(KeyEvent.KEYCODE_ENTER) }
         findViewById<View>(R.id.btn_refresh).setOnClickListener {
             keyDispatcher.cancel()
-            if (offlineShown || pageFailed || webView.url.isNullOrEmpty()) webView.loadUrl(serverUrl)
-            else webView.reload()
+            if (offlineShown || pageFailed || webView.url.isNullOrEmpty()) loadServer()
+            else { pageLoading = true; loadStartedAt = android.os.SystemClock.uptimeMillis(); webView.reload() }
             checkConnection()
         }
         findViewById<View>(R.id.btn_settings).setOnClickListener {
@@ -189,7 +206,7 @@ class MainActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, backCallback)
 
         showState(ConnectionState.CHECKING)
-        webView.loadUrl(serverUrl)
+        loadServer()
 
         connectivity = getSystemService(ConnectivityManager::class.java)
         try {
@@ -226,11 +243,23 @@ class MainActivity : AppCompatActivity() {
     private fun onProbeResult(ok: Boolean) {
         showState(if (ok) ConnectionState.CONNECTED else ConnectionState.DISCONNECTED)
         if (ok && (pageFailed || offlineShown)) {
-            // Connection came back: leave the error page automatically.
-            webView.loadUrl(serverUrl)
-        } else if (!ok && pageFailed && !offlineShown) {
-            offlineShown = true
-            webView.loadDataWithBaseURL(null, offlineHtml(), "text/html", "utf-8", null)
+            // Connection came back: leave the error page automatically, and keep the help page
+            // out of the Back history.
+            clearHistoryOnLoad = true
+            loadServer()
+        } else if (!ok && !offlineShown && (pageFailed || pageLoading)) {
+            val pending = android.os.SystemClock.uptimeMillis() - loadStartedAt
+            if (pageFailed || pending >= HANG_MS) {
+                // A blocked port over a VPN often never refuses: the WebView would wait a minute or
+                // more for its own timeout. Replace the hanging navigation with the help page.
+                // (No stopLoading(): on a real WebView it also cancels this load.)
+                pageLoading = false
+                offlineShown = true
+                webView.loadDataWithBaseURL(null, offlineHtml(), "text/html", "utf-8", null)
+            } else {
+                // Maybe just a slow server: look again once the load has hung long enough.
+                scheduleCheck(HANG_MS - pending)
+            }
         }
     }
 
@@ -387,7 +416,7 @@ class MainActivity : AppCompatActivity() {
             serverUrl = current
             keyDispatcher.cancel()
             clearHistoryOnLoad = true
-            webView.loadUrl(serverUrl)
+            loadServer()
             showState(ConnectionState.CHECKING)
             checkConnection()
         }

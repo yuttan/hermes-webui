@@ -41,6 +41,17 @@ class SetupActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_setup)
+        // From targetSdk 35 the window is always edge-to-edge: keep the form clear of the status bar,
+        // the navigation bar / display cutout and the keyboard.
+        val root = findViewById<android.view.View>(R.id.setup_root)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val types = androidx.core.view.WindowInsetsCompat.Type.systemBars() or
+                androidx.core.view.WindowInsetsCompat.Type.displayCutout() or
+                androidx.core.view.WindowInsetsCompat.Type.ime()
+            val b = insets.getInsets(types)
+            v.setPadding(b.left, b.top, b.right, b.bottom)
+            insets
+        }
         input = findViewById(R.id.et_url)
         status = findViewById(R.id.tv_result)
         if (savedInstanceState == null) input.setText(ServerConfig.get(this) ?: "")
