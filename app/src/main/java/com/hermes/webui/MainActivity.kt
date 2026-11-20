@@ -241,16 +241,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun offlineHtml(): String = """
+    private fun offlineHtml(): String {
+        fun t(id: Int) = android.text.TextUtils.htmlEncode(getString(id))
+        return """
         <html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
         <body style="background:#170d02;color:#eee;font-family:sans-serif;padding:32px;line-height:1.7">
-        <h2 style="color:#ffac02">Hermesに接続できません</h2>
-        <ul><li>Tailscale などの VPN を使っている場合は、オンになっているか確認してください</li>
-        <li>サーバー側で <code>hermes dashboard</code> が起動しているか確認してください</li>
-        <li>接続先が正しいか、下部バーの歯車ボタンで確認できます</li></ul>
-        <p>接続が戻ると自動で表示します。右下の更新ボタンで今すぐ再試行できます。</p>
+        <h2 style="color:#ffac02">${t(R.string.offline_title)}</h2>
+        <ul><li>${t(R.string.offline_vpn)}</li>
+        <li>${t(R.string.offline_server)}</li>
+        <li>${t(R.string.offline_address)}</li></ul>
+        <p>${t(R.string.offline_retry)}</p>
         </body></html>
-    """.trimIndent()
+        """.trimIndent()
+    }
 
     @VisibleForTesting internal fun setPanelOpen(open: Boolean) {
         shortcutPanel.visibility = if (open) View.VISIBLE else View.GONE
@@ -269,7 +272,7 @@ class MainActivity : AppCompatActivity() {
                 minimumWidth = (72 * density).toInt()
                 isClickable = true
                 isFocusable = true
-                contentDescription = "${item.label} ${item.description}"
+                contentDescription = "${item.label} ${getString(item.description)}"
                 setOnClickListener { sendShortcut(item) }
             }
             chip.addView(TextView(this).apply {
@@ -280,7 +283,7 @@ class MainActivity : AppCompatActivity() {
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             })
             chip.addView(TextView(this).apply {
-                text = item.description
+                text = getString(item.description)
                 setTextColor(Color.parseColor("#FF9A9AA0"))
                 textSize = 11f
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO

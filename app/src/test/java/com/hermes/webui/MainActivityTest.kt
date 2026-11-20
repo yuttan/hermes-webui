@@ -90,7 +90,7 @@ class MainActivityTest {
     @Test fun antennaShowsConnected() {
         val c = launch()
         assertEquals(ConnectionState.CONNECTED, c.get().state)
-        assertEquals("Hermesに接続中", icon(c.get()).contentDescription)
+        assertEquals(c.get().getString(R.string.status_connected), icon(c.get()).contentDescription)
         c.pause().stop().destroy()
     }
 
@@ -98,7 +98,7 @@ class MainActivityTest {
         up = false
         val c = launch()
         assertEquals(ConnectionState.DISCONNECTED, c.get().state)
-        assertEquals("Hermesに接続できません", icon(c.get()).contentDescription)
+        assertEquals(c.get().getString(R.string.status_disconnected), icon(c.get()).contentDescription)
         up = true
         c.get().findViewById<View>(R.id.btn_refresh).performClick()
         idle()
