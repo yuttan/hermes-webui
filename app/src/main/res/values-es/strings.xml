@@ -17,7 +17,7 @@
     <string name="err_credentials">No incluyas usuario ni contraseña en la dirección</string>
     <string name="err_query">Quita todo desde «?» o «#»</string>
     <string name="warn_title">Conexión sin cifrar</string>
-    <string name="warn_cleartext">Vas a usar http:// con una dirección fuera de tu red doméstica o de Tailscale. Otros podrían leer tu inicio de sesión y tus conversaciones. Usa HTTPS (por ejemplo, Tailscale Serve).</string>
+    <string name="warn_cleartext">Vas a usar http:// con una dirección fuera de tu red doméstica o de Tailscale. Otros podrían leer tus datos de inicio de sesión y tus conversaciones. Usa HTTPS (por ejemplo, Tailscale Serve).</string>
     <string name="warn_back">Atrás</string>
     <string name="warn_continue">Guardar igualmente</string>
     <string name="status_connected">Conectado a Hermes</string>
@@ -39,7 +39,7 @@
     <string name="sc_esc">Cerrar / cancelar</string>
     <string name="sc_esc2">Interrumpir / descartar borrador</string>
     <string name="sc_ctrl_c">Interrumpir / borrar entrada</string>
-    <string name="sc_ctrl_x">Descartar elemento elegido con ↑</string>
+    <string name="sc_ctrl_x">Descartar elemento en cola elegido con ↑</string>
     <string name="sc_tab">Completar</string>
     <string name="sc_shift_tab">Alternar YOLO</string>
     <string name="sc_alt_enter">Nueva línea</string>

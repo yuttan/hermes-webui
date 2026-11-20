@@ -35,13 +35,13 @@
     <string name="offline_vpn">Jika memakai Tailscale atau VPN lain, pastikan sudah aktif.</string>
     <string name="offline_server">Pastikan hermes dashboard berjalan di komputer Anda.</string>
     <string name="offline_address">Periksa alamat dengan tombol roda gigi di bilah bawah.</string>
-    <string name="offline_retry">Halaman kembali otomatis saat koneksi pulih. Ketuk muat ulang untuk mencoba sekarang.</string>
+    <string name="offline_retry">Halaman kembali otomatis saat koneksi pulih. Ketuk tombol muat ulang untuk mencoba lagi sekarang.</string>
     <string name="sc_esc">Tutup / batal</string>
     <string name="sc_esc2">Hentikan / buang draf</string>
     <string name="sc_ctrl_c">Hentikan / hapus input</string>
     <string name="sc_ctrl_x">Buang item antrean yang dipilih dengan ↑</string>
     <string name="sc_tab">Lengkapi</string>
-    <string name="sc_shift_tab">Alihkan YOLO</string>
+    <string name="sc_shift_tab">Aktifkan/nonaktifkan YOLO</string>
     <string name="sc_alt_enter">Baris baru</string>
     <string name="sc_left">Kursor kiri</string>
     <string name="sc_right">Kursor kanan</string>
@@ -55,7 +55,7 @@
     <string name="sc_ctrl_o">Pemilih model</string>
     <string name="sc_ctrl_t">Agen</string>
     <string name="sc_ctrl_r">Dok kerja</string>
-    <string name="sc_ctrl_l">Gambar ulang</string>
+    <string name="sc_ctrl_l">Segarkan tampilan</string>
     <string name="cmd_new">Obrolan baru</string>
     <string name="cmd_stop">Hentikan</string>
     <string name="cmd_retry">Coba lagi</string>
