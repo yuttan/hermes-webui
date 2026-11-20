@@ -19,9 +19,13 @@ import org.robolectric.annotation.Config
 class MainActivityTest {
     private var up = true
 
+    private val url = "http://100.64.0.1:9119"
+    private val ctx get() = org.robolectric.RuntimeEnvironment.getApplication()
+
     @Before fun setUp() {
         MainActivity.testExecutor = java.util.concurrent.Executor { it.run() }
         MainActivity.testProbe = { up }
+        ServerConfig.set(ctx, url)
     }
 
     @After fun tearDown() {
@@ -51,9 +55,35 @@ class MainActivityTest {
     private fun resources(name: String, a: MainActivity) =
         a.resources.getIdentifier(name, "id", a.packageName)
 
-    @Test fun alwaysLoadsTailscaleOrigin() {
+    @Test fun loadsSavedServer() {
         val c = launch()
-        assertEquals(MainActivity.HERMES_URL, c.get().findViewById<WebView>(R.id.webview).url)
+        assertEquals(url, c.get().serverUrl)
+        assertEquals(url, c.get().findViewById<WebView>(R.id.webview).url)
+        c.pause().stop().destroy()
+    }
+
+    @Test fun firstRunOpensSetupInsteadOfWebView() {
+        ctx.getSharedPreferences("server", android.content.Context.MODE_PRIVATE).edit().clear().commit()
+        val c = Robolectric.buildActivity(MainActivity::class.java).setup().also { idle() }
+        val a = c.get()
+        assertTrue(a.isFinishing)
+        assertEquals(SetupActivity::class.java.name, shadowOf(a).nextStartedActivity.component?.className)
+        c.pause().stop().destroy()
+    }
+
+    @Test fun gearOpensSettingsAndNewAddressIsLoadedOnReturn() {
+        val c = launch()
+        val a = c.get()
+        a.findViewById<View>(R.id.btn_settings).performClick()
+        val started = shadowOf(a).nextStartedActivity
+        assertEquals(SetupActivity::class.java.name, started.component?.className)
+        assertTrue(started.getBooleanExtra(SetupActivity.EXTRA_FROM_APP, false))
+        c.pause()
+        ServerConfig.set(ctx, "https://pc.tail1.ts.net")
+        c.resume()
+        idle()
+        assertEquals("https://pc.tail1.ts.net", a.serverUrl)
+        assertEquals("https://pc.tail1.ts.net", a.findViewById<WebView>(R.id.webview).url)
         c.pause().stop().destroy()
     }
 

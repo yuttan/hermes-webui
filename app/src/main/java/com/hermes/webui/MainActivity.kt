@@ -2,6 +2,7 @@ package com.hermes.webui
 
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -30,23 +31,18 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
- * Full-screen WebView for the Hermes dashboard, always reached through Tailscale.
- * The dashboard's Nous OAuth callback and login cookies are bound to this one origin,
- * so there is deliberately no LAN/VPN switching.
+ * Full-screen WebView for a self-hosted Hermes dashboard at the one address saved in [SetupActivity].
+ * The dashboard's OAuth callback and login cookies are bound to one origin,
+ * so there is deliberately no automatic LAN/VPN switching.
  */
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        val HERMES_URL: String = BuildConfig.HERMES_URL
-        private const val CONNECT_TIMEOUT_MS = 2500
-        private const val READ_TIMEOUT_MS = 3000
         private const val POLL_MS = 15_000L
         private const val NETWORK_DEBOUNCE_MS = 1_000L
         private val COLOR_CONNECTED = Color.parseColor("#34C759")
@@ -61,6 +57,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusIcon: ImageView
     private lateinit var menuButton: ImageButton
     private lateinit var shortcutPanel: View
+
+    /** Dashboard base URL currently loaded (no trailing slash). */
+    @VisibleForTesting internal var serverUrl = ""
+        private set
+    private var ready = false
+    private var clearHistoryOnLoad = false
 
     private val main = Handler(Looper.getMainLooper())
     private val ownExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -90,6 +92,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val saved = ServerConfig.get(this)
+        if (saved == null) {
+            // First run: ask for the address before showing anything.
+            startActivity(Intent(this, SetupActivity::class.java))
+            finish()
+            return
+        }
+        serverUrl = saved
+        ready = true
         setContentView(R.layout.activity_main)
         applyFullscreen()
         installInsets()
@@ -127,6 +138,14 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            override fun onPageFinished(view: WebView?, url: String?) {
+                if (clearHistoryOnLoad && url != null && url.startsWith(serverUrl)) {
+                    // A new server must not be reachable through Back from the old one.
+                    clearHistoryOnLoad = false
+                    view?.clearHistory()
+                }
+            }
+
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 if (request?.isForMainFrame != true) return
                 pageFailed = true
@@ -139,13 +158,16 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_enter).setOnClickListener { keyDispatcher.send(KeyEvent.KEYCODE_ENTER) }
         findViewById<View>(R.id.btn_refresh).setOnClickListener {
             keyDispatcher.cancel()
-            if (offlineShown || pageFailed || webView.url.isNullOrEmpty()) webView.loadUrl(HERMES_URL)
+            if (offlineShown || pageFailed || webView.url.isNullOrEmpty()) webView.loadUrl(serverUrl)
             else webView.reload()
             checkConnection()
         }
+        findViewById<View>(R.id.btn_settings).setOnClickListener {
+            startActivity(Intent(this, SetupActivity::class.java).putExtra(SetupActivity.EXTRA_FROM_APP, true))
+        }
 
         showState(ConnectionState.CHECKING)
-        webView.loadUrl(HERMES_URL)
+        webView.loadUrl(serverUrl)
 
         connectivity = getSystemService(ConnectivityManager::class.java)
         try {
@@ -169,8 +191,9 @@ class MainActivity : AppCompatActivity() {
         main.removeCallbacks(checkRunnable)
         val token = ++generation
         if (state != ConnectionState.CONNECTED) showState(ConnectionState.CHECKING)
+        val url = serverUrl
         executor.execute {
-            val ok = probe()
+            val ok = probe(url)
             main.post {
                 if (destroyed || token != generation) return@post
                 onProbeResult(ok)
@@ -182,41 +205,14 @@ class MainActivity : AppCompatActivity() {
         showState(if (ok) ConnectionState.CONNECTED else ConnectionState.DISCONNECTED)
         if (ok && (pageFailed || offlineShown)) {
             // Connection came back: leave the error page automatically.
-            webView.loadUrl(HERMES_URL)
+            webView.loadUrl(serverUrl)
         } else if (!ok && pageFailed && !offlineShown) {
             offlineShown = true
             webView.loadDataWithBaseURL(null, offlineHtml(), "text/html", "utf-8", null)
         }
     }
 
-    private fun probe(): Boolean {
-        testProbe?.let { return it() }
-        var conn: HttpURLConnection? = null
-        return try {
-            conn = (URL("$HERMES_URL/api/status").openConnection() as HttpURLConnection).apply {
-                connectTimeout = CONNECT_TIMEOUT_MS
-                readTimeout = READ_TIMEOUT_MS
-                instanceFollowRedirects = false
-                useCaches = false
-            }
-            val code = conn.responseCode
-            val body = if (code == 200) conn.inputStream.use { input ->
-                val buf = ByteArray(8192)
-                var total = 0
-                while (total < buf.size) {
-                    val n = input.read(buf, total, buf.size - total)
-                    if (n < 0) break
-                    total += n
-                }
-                String(buf, 0, total, Charsets.UTF_8)
-            } else ""
-            HermesProbe.isHermesStatus(code, body)
-        } catch (e: Exception) {
-            false
-        } finally {
-            conn?.disconnect()
-        }
-    }
+    private fun probe(url: String): Boolean = testProbe?.invoke() ?: HermesProbe.check(url)
 
     private fun showState(newState: ConnectionState) {
         state = newState
@@ -249,8 +245,9 @@ class MainActivity : AppCompatActivity() {
         <html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
         <body style="background:#170d02;color:#eee;font-family:sans-serif;padding:32px;line-height:1.7">
         <h2 style="color:#ffac02">Hermesに接続できません</h2>
-        <ul><li>Tailscaleアプリがオンか確認してください</li>
-        <li>PC側のHermes Web UIが起動しているか確認してください</li></ul>
+        <ul><li>Tailscale などの VPN を使っている場合は、オンになっているか確認してください</li>
+        <li>サーバー側で <code>hermes dashboard</code> が起動しているか確認してください</li>
+        <li>接続先が正しいか、下部バーの歯車ボタンで確認できます</li></ul>
         <p>接続が戻ると自動で表示します。右下の更新ボタンで今すぐ再試行できます。</p>
         </body></html>
     """.trimIndent()
@@ -357,18 +354,34 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (!ready) return
         applyFullscreen()
+        val current = ServerConfig.get(this)
+        if (current != null && current != serverUrl) {
+            // Address changed in settings: open the new server and drop the old history.
+            serverUrl = current
+            keyDispatcher.cancel()
+            clearHistoryOnLoad = true
+            webView.loadUrl(serverUrl)
+            showState(ConnectionState.CHECKING)
+            checkConnection()
+        }
         main.removeCallbacks(pollRunnable)
         main.post(pollRunnable)
     }
 
     override fun onPause() {
+        if (!ready) return super.onPause()
         main.removeCallbacks(pollRunnable)
         super.onPause()
     }
 
     override fun onDestroy() {
         destroyed = true
+        if (!ready) {
+            ownExecutor.shutdownNow()
+            return super.onDestroy()
+        }
         main.removeCallbacksAndMessages(null)
         pulse?.cancel()
         try { connectivity?.unregisterNetworkCallback(networkCallback) } catch (e: RuntimeException) { }
