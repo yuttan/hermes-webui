@@ -84,6 +84,7 @@ HR_KEYSTORE=/path/release.jks HR_KEYSTORE_PASSWORD=... HR_KEY_ALIAS=... HR_KEY_P
 チャット画面のショートカットは、ダッシュボードのターミナル（xterm.js）が日本語入力のために持っている仕組み（compositionend）を使ってバイト列を送っています（`assets/terminal-send.js`）。Hermes の更新でこの部分が変わると動かなくなる可能性があります。
 
 ## 変更履歴
+- 2.3.1: 英語・日本語以外の11言語の訳を見直し（Qwen4-MAX で確認）
 - 2.3.0: Android 16 向けに更新（予測型「戻る」、画面端までの表示）。全角で入力したアドレスも受け付ける。サーバーにつながらないとき、WebView の長いタイムアウトを待たず約10秒で案内画面を出す。Redmi Pad 2（Android 16）で動作確認
 - 2.2.0: アイコンを Hermes Agent の絵をターミナル風のドット表示にしたものに変更（`tools/make_icon.py` で生成）。13言語に対応（日英以外は機械翻訳）。リポジトリ名を `unofficial-hermes-remote` に変更
 - 2.1.0: 名前を「Unofficial Hermes Remote」に。英語表示に対応（端末が日本語なら日本語）。README を英語版と日本語版に分けた
