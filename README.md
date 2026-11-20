@@ -17,6 +17,7 @@ A full-screen Android client for the web dashboard (`hermes dashboard`) of a [He
   - Commands: /new /stop /retry /undo /model /compress /usage /status /sessions /help (inserted into the input only; press Enter to run)
 - Connection status antenna on the left (green = connected, pulsing grey = checking, red = unreachable). When the server is unreachable a help page is shown, and the dashboard comes back automatically once it is reachable again
 - Change the server at any time with the gear button
+- The screen does not go to sleep while Chat is open and connected
 
 ## Install
 1. Download the latest `hermes-remote-<version>.apk` from [Releases](https://github.com/yuttan/unofficial-hermes-remote/releases) on your phone
@@ -89,6 +90,7 @@ The launcher icon is generated from the Hermes Agent artwork by `python tools/ma
 Chat shortcuts are sent as raw bytes through the IME fallback (`compositionend`) of the dashboard's xterm.js terminal (`assets/terminal-send.js`). A Hermes update that changes this part of the dashboard may break them.
 
 ## Changelog
+- 2.4.0: The screen stays on while the Chat page is open and the server is reachable (it may sleep again on other pages or when the connection is lost)
 - 2.3.2: Reopening Chat after Android killed the app (or after a lost connection) re-attaches the running chat terminal instead of starting a new, empty session. Works while the dashboard keeps the detached terminal (30 min); needs Android System WebView with document-start scripts (any recent version)
 - 2.3.1: Translations reviewed for all 11 non-English/Japanese languages (with Qwen4-MAX); native-speaker corrections still welcome
 - 2.3.0: Targets Android 16 (predictive back, edge-to-edge). Full-width (CJK keyboard) addresses are accepted. The help page appears within ~10 s when the server cannot be reached instead of after the WebView's own long timeout. Tested on a Redmi Pad 2 (Android 16)

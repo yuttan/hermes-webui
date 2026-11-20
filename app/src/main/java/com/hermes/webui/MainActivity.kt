@@ -94,7 +94,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** The Chat page is open and the server is reachable: keep the display awake. */
+    @VisibleForTesting internal var keepScreenOn = false
+        private set
+
+    private fun updateKeepScreenOn() {
+        if (!ready) return
+        val on = state == ConnectionState.CONNECTED && !offlineShown && ChatPage.isChat(serverUrl, webView.url)
+        if (on == keepScreenOn) return
+        keepScreenOn = on
+        // Window flag, not a wake lock: it only applies while this screen is visible and needs no permission.
+        if (on) window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+
     private fun updateBack() {
+        updateKeepScreenOn()
         backCallback.isEnabled = ready && webView.canGoBack()
     }
 
@@ -272,6 +287,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showState(newState: ConnectionState) {
         state = newState
+        updateKeepScreenOn()
         val (icon, color, desc) = when (newState) {
             ConnectionState.CONNECTED -> Triple(R.drawable.ic_antenna, COLOR_CONNECTED, R.string.status_connected)
             ConnectionState.CHECKING -> Triple(R.drawable.ic_antenna, COLOR_CHECKING, R.string.status_checking)
