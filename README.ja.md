@@ -1,3 +1,5 @@
+<img src="docs/icon.png" width="96" align="right" alt="アイコン">
+
 # Unofficial Hermes Remote
 
 [English](README.md) | 日本語
