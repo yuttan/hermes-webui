@@ -2,7 +2,7 @@
 
 [English](README.md) | 日本語
 
-自分のPCで動かしている [Hermes Agent](https://github.com/NousResearch/hermes-agent) のWebダッシュボード（`hermes dashboard`）を、Androidのスマホ・タブレットから全画面で使うためのアプリです。Android 7.0以上。表示は端末の言語に合わせて日本語か英語になります。
+自分のPCで動かしている [Hermes Agent](https://github.com/NousResearch/hermes-agent) のWebダッシュボード（`hermes dashboard`）を、Androidのスマホ・タブレットから全画面で使うためのアプリです。Android 7.0以上。表示は端末の言語に合わせて、日本語・英語・ドイツ語・スペイン語・フランス語・イタリア語・ポルトガル語・ロシア語・中国語（簡体字／繁体字）・韓国語・インドネシア語に切り替わります（それ以外の言語では英語）。
 ホーム画面のアプリ名は短く「Hermes Remote」と表示します。
 
 > 個人が作った**非公式アプリ**です。Nous Research とは関係ありません。
@@ -16,7 +16,7 @@
 - 歯車ボタンで接続先をいつでも変更
 
 ## インストール
-1. [Releases](https://github.com/yuttan/hermes-webui/releases) から最新の `hermes-remote-<版>.apk` をスマホでダウンロード
+1. [Releases](https://github.com/yuttan/unofficial-hermes-remote/releases) から最新の `hermes-remote-<版>.apk` をスマホでダウンロード
 2. 開いてインストール（「提供元不明のアプリ」の許可を求められたら、ダウンロードに使ったブラウザに許可する）
 3. 初回起動で接続先を入力 →「接続テスト」→「保存して開く」
 
@@ -82,6 +82,7 @@ HR_KEYSTORE=/path/release.jks HR_KEYSTORE_PASSWORD=... HR_KEY_ALIAS=... HR_KEY_P
 チャット画面のショートカットは、ダッシュボードのターミナル（xterm.js）が日本語入力のために持っている仕組み（compositionend）を使ってバイト列を送っています（`assets/terminal-send.js`）。Hermes の更新でこの部分が変わると動かなくなる可能性があります。
 
 ## 変更履歴
+- 2.2.0: アイコンを Hermes Agent の絵をターミナル風のドット表示にしたものに変更（`tools/make_icon.py` で生成）。13言語に対応（日英以外は機械翻訳）。リポジトリ名を `unofficial-hermes-remote` に変更
 - 2.1.0: 名前を「Unofficial Hermes Remote」に。英語表示に対応（端末が日本語なら日本語）。README を英語版と日本語版に分けた
 - 2.0.0: 誰でも使える配布版に。初回起動の接続先設定画面と歯車ボタンを追加し、接続先をビルド時の埋め込みから端末の設定に変更。パッケージ名を `io.github.yuttan.hermesremote`、アプリ名を「Hermes Remote」に変更（1.x とは別アプリとして入ります）。HTTPS（Tailscale Serve）に対応し、平文で外部へつなぐときは警告。リリース署名、バックアップ除外を追加
 - 1.7: 接続先アドレスをソースから外し、`local.properties` から埋め込む方式に変更

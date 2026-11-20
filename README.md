@@ -2,7 +2,7 @@
 
 English | [日本語](README.ja.md)
 
-A full-screen Android client for the web dashboard (`hermes dashboard`) of a [Hermes Agent](https://github.com/NousResearch/hermes-agent) that you run on your own computer. Android 7.0 or later. The UI follows the device language (English or Japanese). On the home screen the app is shown as "Hermes Remote".
+A full-screen Android client for the web dashboard (`hermes dashboard`) of a [Hermes Agent](https://github.com/NousResearch/hermes-agent) that you run on your own computer. Android 7.0 or later. The UI follows the device language: English, Japanese, German, Spanish, French, Italian, Portuguese, Russian, Chinese (Simplified / Traditional), Korean and Indonesian (English for any other language). On the home screen the app is shown as "Hermes Remote".
 
 > This is an **unofficial** app made by an individual. It is not affiliated with or endorsed by Nous Research.
 
@@ -15,7 +15,7 @@ A full-screen Android client for the web dashboard (`hermes dashboard`) of a [He
 - Change the server at any time with the gear button
 
 ## Install
-1. Download the latest `hermes-remote-<version>.apk` from [Releases](https://github.com/yuttan/hermes-webui/releases) on your phone
+1. Download the latest `hermes-remote-<version>.apk` from [Releases](https://github.com/yuttan/unofficial-hermes-remote/releases) on your phone
 2. Open it and install (allow "install unknown apps" for your browser if asked)
 3. On first launch enter your dashboard address → **Test connection** → **Save and open**
 
@@ -77,12 +77,15 @@ HR_KEYSTORE=/path/release.jks HR_KEYSTORE_PASSWORD=... HR_KEY_ALIAS=... HR_KEY_P
 ```
 Losing the key means existing users can no longer update. Keep a backup.
 
-Translations live in `app/src/main/res/values*/strings.xml` (English is the default, Japanese in `values-ja`). Pull requests for more languages are welcome.
+Translations live in `app/src/main/res/values*/strings.xml` (English in `values`). Languages other than English and Japanese were machine-translated; corrections and new languages are welcome as pull requests. `TranslationsTest` fails if a language misses or adds a string.
+
+The launcher icon is generated from the Hermes Agent artwork by `python tools/make_icon.py` (amber dot-matrix "terminal" rendering).
 
 ### How the shortcuts work
 Chat shortcuts are sent as raw bytes through the IME fallback (`compositionend`) of the dashboard's xterm.js terminal (`assets/terminal-send.js`). A Hermes update that changes this part of the dashboard may break them.
 
 ## Changelog
+- 2.2.0: Dot-matrix terminal-style icon. UI in 13 languages. Repository renamed to `unofficial-hermes-remote`
 - 2.1.0: Renamed to "Unofficial Hermes Remote". English UI (Japanese on Japanese devices). English and Japanese READMEs
 - 2.0.0: First public build. First-run server setup and gear button; the address is a device setting instead of a build-time constant. Package `io.github.yuttan.hermesremote` (installs alongside 1.x). HTTPS (Tailscale Serve) support and a warning for cleartext to public hosts. Release signing; app data excluded from backup
 - 1.7 and earlier: personal tablet builds

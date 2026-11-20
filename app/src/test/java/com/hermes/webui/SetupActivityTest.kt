@@ -111,6 +111,22 @@ class SetupActivityTest {
         assertEquals("Hermes Remote", a.getString(R.string.app_name))
     }
 
+    @Test @Config(qualifiers = "de") fun germanOnGermanDevices() {
+        assertEquals("Verbindung testen", launch().get().getString(R.string.setup_test))
+    }
+
+    @Test @Config(qualifiers = "zh-rTW") fun traditionalChineseOnTaiwanDevices() {
+        assertEquals("測試連線", launch().get().getString(R.string.setup_test))
+    }
+
+    @Test @Config(qualifiers = "zh-rHK") fun hongKongGetsTraditionalChinese() {
+        assertEquals("測試連線", launch().get().getString(R.string.setup_test))
+    }
+
+    @Test @Config(qualifiers = "zh-rCN") fun mainlandGetsSimplifiedChinese() {
+        assertEquals("测试连接", launch().get().getString(R.string.setup_test))
+    }
+
     @Test fun prefillsSavedAddress() {
         ServerConfig.set(ctx, "https://pc.tail1.ts.net")
         val a = launch(fromApp = true).get()
