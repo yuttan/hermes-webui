@@ -24,8 +24,8 @@ android {
         applicationId "io.github.yuttan.hermesremote"
         minSdk 24
         targetSdk 36
-        versionCode 14
-        versionName "2.3.0"
+        versionCode 15
+        versionName "2.3.1"
         buildConfigField "String", "DEFAULT_URL", "\"${hermesUrl}\""
     }
 
