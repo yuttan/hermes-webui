@@ -34,12 +34,12 @@
     <string name="offline_title">Hermes inacessível</string>
     <string name="offline_vpn">Se você usa Tailscale ou outra VPN, verifique se está ligada.</string>
     <string name="offline_server">Verifique se hermes dashboard está rodando no seu computador.</string>
-    <string name="offline_address">Confira o endereço no botão de engrenagem da barra inferior.</string>
+    <string name="offline_address">Confira o endereço usando o botão de engrenagem da barra inferior.</string>
     <string name="offline_retry">A página volta sozinha quando a conexão retornar. Toque em recarregar para tentar agora.</string>
     <string name="sc_esc">Fechar / cancelar</string>
     <string name="sc_esc2">Interromper / descartar rascunho</string>
     <string name="sc_ctrl_c">Interromper / limpar entrada</string>
-    <string name="sc_ctrl_x">Descartar item escolhido com ↑</string>
+    <string name="sc_ctrl_x">Descartar item da fila escolhido com ↑</string>
     <string name="sc_tab">Completar</string>
     <string name="sc_shift_tab">Alternar YOLO</string>
     <string name="sc_alt_enter">Nova linha</string>
