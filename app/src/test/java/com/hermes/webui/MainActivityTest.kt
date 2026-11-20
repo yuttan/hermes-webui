@@ -62,6 +62,36 @@ class MainActivityTest {
         c.pause().stop().destroy()
     }
 
+    @Test fun screenStaysOnOnlyOnConnectedChatPage() {
+        val c = launch()
+        val a = c.get()
+        val web = a.findViewById<WebView>(R.id.webview)
+        val client = shadowOf(web).webViewClient
+        fun flag() = a.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
+        assertEquals(ConnectionState.CONNECTED, a.state)
+        assertFalse(flag())
+        web.loadUrl("$url/chat")
+        client.doUpdateVisitedHistory(web, "$url/chat", false)
+        assertTrue(a.keepScreenOn)
+        assertTrue(flag())
+        // Connection lost: the display may sleep again.
+        up = false
+        a.findViewById<View>(R.id.btn_refresh).performClick()
+        idle()
+        assertFalse(flag())
+        up = true
+        a.findViewById<View>(R.id.btn_refresh).performClick()
+        idle()
+        web.loadUrl("$url/chat")
+        client.doUpdateVisitedHistory(web, "$url/chat", false)
+        assertTrue(flag())
+        // Leaving Chat for another dashboard page.
+        web.loadUrl("$url/sessions")
+        client.doUpdateVisitedHistory(web, "$url/sessions", false)
+        assertFalse(flag())
+        c.pause().stop().destroy()
+    }
+
     @Test fun backWalksPageHistoryThenLeavesTheApp() {
         val c = launch()
         val a = c.get()
