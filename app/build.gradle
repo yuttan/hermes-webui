@@ -24,8 +24,8 @@ android {
         applicationId "io.github.yuttan.hermesremote"
         minSdk 24
         targetSdk 36
-        versionCode 15
-        versionName "2.3.1"
+        versionCode 16
+        versionName "2.3.2"
         buildConfigField "String", "DEFAULT_URL", "\"${hermesUrl}\""
     }
 
@@ -76,6 +76,8 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     // 1.8+ routes OnBackPressedCallback through Android 13+ OnBackInvokedDispatcher (needed from targetSdk 36).
     implementation 'androidx.activity:activity-ktx:1.9.3'
+    // Document-start script + origin-restricted message listener (PtyTokenKeeper).
+    implementation 'androidx.webkit:webkit:1.12.1'
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 }
